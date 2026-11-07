@@ -1,0 +1,62 @@
+{
+  "_readme": "Stored ESTIMATE prices used when a live price cannot be fetched (and for providers with no live source). These are US reference list prices (pay-as-you-go, Linux, standard object storage, first-tier internet egress). They are NOT verified against provider price lists until 'last_manual_review' is filled in. After checking each source_url, put the date (YYYY-MM-DD) in 'last_manual_review' and set 'verified' to true for the entries you checked.",
+  "currency": "USD",
+  "reference_app_region": "us-east-1",
+  "last_manual_review": null,
+  "providers": {
+    "AWS": {
+      "storage": {"usd_per_gb_month": 0.023, "verified": false, "provenance": "carried over from original app configuration",
+                  "source_url": "https://aws.amazon.com/s3/pricing/"},
+      "compute": {"instance": "t3.medium (2 vCPU / 4 GiB)", "vcpu": 2, "ram_gib": 4, "usd_per_hour": 0.0416, "verified": false,
+                  "provenance": "carried over from original app configuration",
+                  "source_url": "https://aws.amazon.com/ec2/pricing/on-demand/"},
+      "egress":  {"usd_per_gb": 0.09, "verified": false, "provenance": "added in pricing v2 from published list-price recollection - verify",
+                  "source_url": "https://aws.amazon.com/ec2/pricing/on-demand/#Data_Transfer"}
+    },
+    "Microsoft Azure": {
+      "storage": {"usd_per_gb_month": 0.018, "verified": false, "provenance": "carried over from original app configuration",
+                  "source_url": "https://azure.microsoft.com/pricing/details/storage/blobs/"},
+      "compute": {"instance": "B2s (2 vCPU / 4 GiB)", "azure_sku": "Standard_B2s", "vcpu": 2, "ram_gib": 4, "usd_per_hour": 0.0416, "verified": false,
+                  "provenance": "carried over from original app configuration",
+                  "source_url": "https://azure.microsoft.com/pricing/details/virtual-machines/linux/"},
+      "egress":  {"usd_per_gb": 0.087, "verified": false, "provenance": "added in pricing v2 from published list-price recollection - verify",
+                  "source_url": "https://azure.microsoft.com/pricing/details/bandwidth/"}
+    },
+    "Google Cloud": {
+      "storage": {"usd_per_gb_month": 0.020, "verified": false, "provenance": "carried over from original app configuration",
+                  "source_url": "https://cloud.google.com/storage/pricing"},
+      "compute": {"instance": "e2-medium (2 vCPU / 4 GiB)", "vcpu": 2, "ram_gib": 4, "usd_per_hour": 0.0335, "verified": false,
+                  "provenance": "carried over from original app configuration",
+                  "source_url": "https://cloud.google.com/compute/vm-instance-pricing"},
+      "egress":  {"usd_per_gb": 0.12, "verified": false, "provenance": "added in pricing v2 from published list-price recollection - verify",
+                  "source_url": "https://cloud.google.com/vpc/network-pricing"}
+    },
+    "IBM Cloud": {
+      "storage": {"usd_per_gb_month": 0.021, "verified": false, "provenance": "carried over from original app configuration; manually maintained (no public price API used)",
+                  "source_url": "https://cloud.ibm.com/objectstorage/create#pricing"},
+      "compute": {"instance": "bx2-2x8 (2 vCPU / 8 GiB)", "vcpu": 2, "ram_gib": 8, "usd_per_hour": 0.0963, "verified": false,
+                  "provenance": "carried over from original app configuration; manually maintained (no public price API used)",
+                  "source_url": "https://cloud.ibm.com/docs/vpc?topic=vpc-profiles"},
+      "egress":  {"usd_per_gb": 0.09, "verified": false, "provenance": "added in pricing v2 as a placeholder estimate - verify",
+                  "source_url": "https://www.ibm.com/cloud/vpc/pricing"}
+    },
+    "Oracle Cloud": {
+      "storage": {"usd_per_gb_month": 0.025, "verified": false, "provenance": "carried over from original app configuration",
+                  "source_url": "https://www.oracle.com/cloud/storage/pricing/"},
+      "compute": {"instance": "VM.Standard.E4.Flex (1 OCPU = 2 vCPU / 8 GiB)", "vcpu": 2, "ram_gib": 8, "usd_per_hour": 0.037, "verified": false,
+                  "provenance": "CHANGED from original 0.0732: OCI Flex bills per OCPU (1 OCPU = 2 vCPU) plus per GB of memory, which gives about 0.025 + 8 x 0.0015 = 0.037 per hour - verify",
+                  "source_url": "https://www.oracle.com/cloud/compute/pricing/"},
+      "egress":  {"usd_per_gb": 0.0085, "verified": false, "provenance": "added in pricing v2 from published list-price recollection - verify; the monthly free allowance is NOT applied",
+                  "source_url": "https://www.oracle.com/cloud/networking/pricing/"}
+    },
+    "Tencent Cloud": {
+      "storage": {"usd_per_gb_month": 0.020, "verified": false, "provenance": "carried over from original app configuration; manually maintained (no public price API used)",
+                  "source_url": "https://www.tencentcloud.com/pricing"},
+      "compute": {"instance": "S5.MEDIUM4 (2 vCPU / 4 GiB)", "vcpu": 2, "ram_gib": 4, "usd_per_hour": 0.048, "verified": false,
+                  "provenance": "carried over from original app configuration; manually maintained (no public price API used)",
+                  "source_url": "https://www.tencentcloud.com/pricing"},
+      "egress":  {"usd_per_gb": 0.12, "verified": false, "provenance": "added in pricing v2 as a placeholder estimate - verify",
+                  "source_url": "https://www.tencentcloud.com/pricing"}
+    }
+  }
+}

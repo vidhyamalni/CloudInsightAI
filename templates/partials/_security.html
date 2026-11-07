@@ -1,0 +1,29 @@
+<div class="notice warn"><i data-lucide="shield-alert"></i><div><strong>{{ d.security.disclaimer }}</strong></div></div>
+
+<div class="sec-dashboard">
+  <div class="sec-tile"><div class="chart-box"><canvas id="scoreGauge"></canvas></div>
+    <p class="sec-tile-label">Security Score</p></div>
+  <div class="sec-tile"><div class="chart-box"><canvas id="riskDist"></canvas></div>
+    <p class="sec-tile-label">Risk Distribution — Risk Level: <b>{{ d.security.risk_level }}</b></p></div>
+  <div class="sec-tile wide"><div class="chart-box"><canvas id="domainBar"></canvas></div>
+    <p class="sec-tile-label">Findings by domain (gap = 3, review = 2, controlled = 1)</p></div>
+</div>
+
+<div class="sec-counts">
+  <div class="count-chip high"><b>{{ d.security.high }}</b><span>High Risks</span></div>
+  <div class="count-chip medium"><b>{{ d.security.medium }}</b><span>Medium Risks</span></div>
+  <div class="count-chip low"><b>{{ d.security.low }}</b><span>Low Risks</span></div>
+  <div class="count-chip tool"><b>{{ d.security.tool }}</b><span>Recommended posture tool</span></div>
+</div>
+
+<h3 class="sub-heading">Control domains</h3>
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Domain</th><th>Status</th><th>Detail</th></tr></thead>
+  <tbody>{% for x in d.security.domains %}
+    <tr><td>{{ x.domain }}</td>
+      <td><span class="badge badge-{{ x.status }}">{{ {'gap':'Gap identified','review':'Review recommended','ok':'Controlled'}[x.status] }}</span></td>
+      <td class="cell-note">{{ x.note }}</td></tr>
+  {% endfor %}</tbody>
+</table>
+</div>

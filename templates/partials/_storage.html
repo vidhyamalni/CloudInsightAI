@@ -1,0 +1,38 @@
+{% set st = d.storage.primary.pricing_status or 'estimated' %}
+<div class="notice"><i data-lucide="info"></i><div><strong>Storage pricing: {{ st }}.</strong>
+  All storage figures below are estimates, not billing amounts — see Cost Analysis for sources and timestamps.</div></div>
+
+<div class="facts-grid wide">
+  <div class="fact"><span>Required Storage</span><b>{{ d.storage.required_gb }} GB</b></div>
+  <div class="fact"><span>Storage Type</span><b>{{ d.storage.storage_type }}</b></div>
+  <div class="fact"><span>Est. Monthly Storage Cost</span><b>{{ d.storage.primary.monthly | money }}</b></div>
+  <div class="fact"><span>Storage Cost per GB</span><b>${{ '%.4f' | format(d.storage.primary.per_gb) }} /GB·mo</b></div>
+  <div class="fact"><span>Est. Annual Storage Cost</span><b>{{ d.storage.primary.annual | money }}</b></div>
+  <div class="fact"><span>Data Sensitivity</span><b>{{ d.inputs.data_sensitivity }} (×{{ d.storage.redundancy_multiplier }} retained copies)</b></div>
+  <div class="fact"><span>Encryption Requirement</span><b>{{ d.storage.requirements.encryption }}</b></div>
+  <div class="fact"><span>Backup Requirement</span><b>{{ d.storage.requirements.backup }}</b></div>
+  <div class="fact"><span>Data Retention</span><b>{{ d.storage.requirements.retention }}</b></div>
+  <div class="fact"><span>Security Recommendations</span><b>{{ d.storage.security_recs | join(' · ') }}</b></div>
+</div>
+
+<h3 class="sub-heading">Storage profile per cloud provider</h3>
+<div class="pstore-grid">
+  {% for s in d.storage.providers %}
+  <article class="pstore-card {% if s.provider == d.inputs.provider %}is-primary{% endif %}">
+    <header><h4>{{ s.provider }}{% if s.provider == d.inputs.provider %}<span class="badge badge-blue">Selected</span>{% endif %}</h4>
+      <p class="pstore-service">{{ s.service }}</p></header>
+    <dl class="kv">
+      <div><dt>Est. cost per GB</dt><dd>${{ '%.4f' | format(s.per_gb) }} /GB·mo</dd></div>
+      <div><dt>Estimated Storage Cost</dt><dd>{{ s.monthly | money }} /mo</dd></div>
+      <div><dt>Est. Monthly Cost</dt><dd>{{ s.monthly | money }}</dd></div>
+      <div><dt>Estimated Annual Cost</dt><dd>{{ s.annual | money }}</dd></div>
+      <div><dt>Encryption</dt><dd>{{ s.encryption }}</dd></div>
+      <div><dt>Backup</dt><dd>{{ s.backup }}</dd></div>
+      <div><dt>Retention</dt><dd>{{ s.retention }}</dd></div>
+    </dl>
+    <p class="mini-label">Security considerations</p>
+    <ul class="dot-list">{% for x in s.security %}<li>{{ x }}</li>{% endfor %}</ul>
+    <p class="source-line"><i data-lucide="info"></i> Pricing status: {{ d.storage.primary.pricing_status or 'estimated' }} · estimates only — verify with the provider pricing calculator.</p>
+  </article>
+  {% endfor %}
+</div>

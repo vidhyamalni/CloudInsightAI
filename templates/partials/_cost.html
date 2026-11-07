@@ -1,0 +1,67 @@
+{% macro pbadge(s) %}<span class="badge badge-{{ 'ok' if s == 'live' else ('blue' if s == 'cached' else 'review') }}">{{ s }}</span>{% endmacro %}
+{% if d.pricing %}
+<div class="notice {{ 'warn' if d.pricing.overall_status in ['estimated', 'mixed'] else '' }}"><i data-lucide="info"></i><div>
+  <strong>Pricing basis: {{ d.pricing.overall_status }}.</strong> {{ d.meta.pricing_source }}
+  <br>Estimates only, not billing amounts. Currency: {{ d.pricing.currency }}. Generated {{ d.pricing.generated_at }}.</div></div>
+{% else %}
+<div class="notice warn"><i data-lucide="info"></i><div><strong>Estimated pricing (older report).</strong>
+  This report was generated before price sources were recorded, so all figures are stored estimates, not live prices.
+  Run a new analysis to see per-price sources and timestamps.</div></div>
+{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><span>Estimated Monthly Cost</span><b>{{ d.cost.primary.monthly | money }}</b></div>
+  <div class="kpi"><span>Estimated Annual Cost</span><b>{{ d.cost.primary.annual | money }}</b></div>
+  <div class="kpi"><span>Storage Cost</span><b>{{ d.cost.primary.storage | money }}</b></div>
+  <div class="kpi"><span>Compute Cost</span><b>{{ d.cost.primary.compute | money }}</b></div>
+  <div class="kpi"><span>Network egress (est.)</span><b>{{ d.cost.primary.network | money }}</b></div>
+</div>
+
+{% if d.cost.budget_utilization %}
+<div class="budget-bar-wrap">
+  <div class="budget-label"><span>Budget utilization</span><b>{{ d.cost.budget_utilization }}% of {{ d.inputs.monthly_budget | money }}/mo</b></div>
+  <div class="budget-bar"><div class="budget-fill {% if d.cost.budget_utilization > 100 %}over{% elif d.cost.budget_utilization > 80 %}warn{% endif %}"
+    style="width: {{ [d.cost.budget_utilization, 100] | min }}%"></div></div>
+</div>
+{% endif %}
+
+<h3 class="sub-heading">Provider cost comparison</h3>
+<div class="chart-box tall"><canvas id="costCompareChart"></canvas></div>
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Provider</th><th>Storage /mo</th><th>Compute /mo</th><th>Network /mo</th><th>Total /mo</th><th>Total /yr</th><th>Pricing</th></tr></thead>
+  <tbody>{% for r in d.cost.comparison %}
+    <tr><td>{{ r.provider }}</td><td>{{ r.storage | money }}</td><td>{{ r.compute | money }}</td><td>{{ r.network | money }}</td>
+      <td><b>{{ r.monthly | money }}</b></td><td>{{ r.annual | money }}</td>
+      <td>{{ pbadge(r.pricing_status or 'estimated') }}</td></tr>
+  {% endfor %}</tbody>
+</table>
+</div>
+
+{% if d.pricing %}
+<h3 class="sub-heading">Pricing sources and timestamps</h3>
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Provider</th><th>Price point</th><th>Rate ({{ d.pricing.currency }})</th><th>Status</th><th>Source</th><th>As of</th><th>Region used</th></tr></thead>
+  <tbody>{% for name, comps in d.pricing.providers.items() %}{% for comp in ['storage', 'compute', 'egress'] %}{% set q = comps[comp] %}
+    <tr title="{{ q.note }}"><td>{{ name }}</td><td>{{ comp | capitalize }}</td>
+      <td>{{ '%.4f' | format(q.value) }} <small>{{ q.unit | replace('USD ', '') }}</small></td>
+      <td>{{ pbadge(q.status) }}{% if q.stale %} <small>stale</small>{% endif %}</td>
+      <td class="cell-note">{% if q.source_url %}<a href="{{ q.source_url }}" target="_blank" rel="noopener noreferrer">{{ q.source }}</a>{% else %}{{ q.source }}{% endif %}</td>
+      <td>{{ q.as_of or 'not verified' }}</td><td class="cell-note">{{ q.region_used }}{% if not q.region_adjusted %} <small>(reference price)</small>{% endif %}</td></tr>
+  {% endfor %}{% endfor %}</tbody>
+</table>
+</div>
+<p class="source-line"><i data-lucide="info"></i> <b>live</b> = fetched from an official price API during this analysis · <b>cached</b> = a previous live fetch served from the local cache · <b>estimated</b> = stored estimate, never presented as live. Hover a row for details.</p>
+{% endif %}
+
+<div class="split-2">
+  <div class="card-panel">
+    <h3 class="sub-heading tight">Why the costs differ</h3>
+    <ul class="dot-list">{% for x in d.cost.cost_drivers %}<li>{{ x }}</li>{% endfor %}</ul>
+  </div>
+  <div class="card-panel">
+    <h3 class="sub-heading tight">Assumptions used for calculations</h3>
+    <ul class="dot-list">{% for x in d.assumptions %}<li>{{ x }}</li>{% endfor %}</ul>
+  </div>
+</div>

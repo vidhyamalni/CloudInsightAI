@@ -1,0 +1,37 @@
+<h3 class="sub-heading">Capability profile</h3>
+<div class="chart-box"><canvas id="radarChart"></canvas></div>
+
+<div class="table-scroll">
+<table class="data-table compare">
+  <thead><tr><th class="sticky-col">Metric</th>
+    {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+      <th>{% if name == d.inputs.provider %}<span class="badge badge-blue">Selected</span> {% endif %}{{ name }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    <tr><td class="sticky-col">Estimated Cost /mo</td>
+      {% for c in d.cost.comparison %}<td><b>{{ c.monthly | money }}</b></td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Storage Cost /mo</td>
+      {% for c in d.cost.comparison %}<td>{{ c.storage | money }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Compute Cost /mo</td>
+      {% for c in d.cost.comparison %}<td>{{ c.compute | money }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Security Considerations</td>
+      {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+        <td class="cell-note">{{ PCONFIG[name].security_notes | join(' · ') }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Scalability</td>
+      {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+        <td class="cell-note">{{ PCONFIG[name].scalability }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Availability</td>
+      {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+        <td class="cell-note">{{ PCONFIG[name].availability }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Compliance</td>
+      {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+        <td class="cell-note">{{ PCONFIG[name].compliance | join(', ') }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Key Strengths</td>
+      {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+        <td class="cell-note">{{ PCONFIG[name].strengths | join(' · ') }}</td>{% endfor %}</tr>
+    <tr><td class="sticky-col">Key Limitations</td>
+      {% for name in ['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud','Tencent Cloud'] %}
+        <td class="cell-note">{{ PCONFIG[name].limitations | join(' · ') }}</td>{% endfor %}</tr>
+  </tbody>
+</table>
+</div>
+<p class="source-line"><i data-lucide="info"></i> Cost cells are estimates (see Cost Analysis for each price's status and source) · verify with the provider pricing calculator.</p>

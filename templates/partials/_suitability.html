@@ -1,0 +1,54 @@
+{% set s = d.suitability %}
+<div class="notice"><i data-lucide="sparkles"></i><div><strong>Automatic provider selection.</strong>
+  {{ s.method_note }}</div></div>
+
+<div class="rec-banner">
+  <div class="rec-main">
+    <span class="rec-kicker">Most suitable provider for these requirements</span>
+    <b>{{ s.winner }}</b>
+    <span class="rec-score">{{ s.scores[s.winner].overall }}/100 overall suitability</span>
+  </div>
+  <span class="badge {{ 'badge-ok' if s.explanation_source == 'gemini' else 'badge-review' }}">
+    {{ 'Explanation by Gemini AI' if s.explanation_source == 'gemini' else 'Rule-based explanation' }}</span>
+</div>
+
+<div class="card-panel"><p class="lead">{{ s.explanation }}</p></div>
+
+<div class="split-2">
+  <div class="card-panel">
+    <h3 class="sub-heading tight">Decisive factors — {{ s.winner }}</h3>
+    <ul class="dot-list">{% for f in s.factors %}<li>{{ f }}</li>{% endfor %}</ul>
+  </div>
+  <div class="card-panel">
+    <h3 class="sub-heading tight">Requirement weights used</h3>
+    <div class="weight-chips">
+      {% for k, v in s.weights.items() %}<span class="wchip">{{ s.dim_labels[k] }} · {{ (v * 100) | round(0) | int }}%</span>{% endfor %}
+    </div>
+    <p class="source-line"><i data-lucide="info"></i> Weights adapt automatically to sensitivity, compliance, availability, workload and budget inputs.</p>
+  </div>
+</div>
+
+<h3 class="sub-heading">Overall suitability ranking (all six providers)</h3>
+<div class="chart-box"><canvas id="suitabilityChart"></canvas></div>
+
+<h3 class="sub-heading">Per-provider suitability analysis</h3>
+<div class="suit-grid">
+  {% for r in s.ranking %}
+  {% set name = r.provider %}
+  {% set sc = s.scores[name] %}
+  <article class="suit-card {% if name == s.winner %}is-winner{% endif %}">
+    <header><h4>{{ name }}{% if name == s.winner %}<span class="badge badge-ok">Recommended</span>{% endif %}</h4>
+      <p class="suit-overall"><b>{{ sc.overall }}</b>/100 — {{ r.verdict }}</p></header>
+    {% for dim, label in s.dim_labels.items() %}
+    <div class="dim-row"><span class="dim-name">{{ label }}</span>
+      <div class="dim-bar"><div class="dim-fill {% if sc.dimensions[dim] >= 85 %}hi{% elif sc.dimensions[dim] >= 70 %}mid{% else %}lo{% endif %}"
+        style="width: {{ sc.dimensions[dim] }}%"></div></div>
+      <span class="dim-val">{{ sc.dimensions[dim] }}</span></div>
+    {% endfor %}
+    <details class="suit-notes"><summary>How each dimension was assessed</summary>
+      <ul class="dot-list">{% for dim, note in sc.notes.items() %}<li><b>{{ s.dim_labels[dim] }}:</b> {{ note }}</li>{% endfor %}</ul>
+    </details>
+  </article>
+  {% endfor %}
+</div>
+<p class="source-line"><i data-lucide="info"></i> Cost figures are estimates — verify with the provider pricing calculator.</p>

@@ -1,0 +1,24 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Profile{% endblock %}
+{% block pagesub %}Account overview{% endblock %}
+{% block content %}
+<div class="split-2">
+  <div class="card-panel">
+    <h3 class="sub-heading tight">Account</h3>
+    <div class="facts-grid">
+      <div class="fact"><span>Name</span><b>{{ current_user.name }}</b></div>
+      <div class="fact"><span>Email</span><b>{{ current_user.email }}</b></div>
+      <div class="fact"><span>Member since</span><b>{{ current_user.created_at.strftime('%b %d, %Y') }}</b></div>
+      <div class="fact"><span>Reports generated</span><b>{{ reports_count }}</b></div>
+    </div>
+  </div>
+  <div class="card-panel">
+    <h3 class="sub-heading tight">Security</h3>
+    <ul class="dot-list">
+      <li>Password stored with Werkzeug salted hashing (PBKDF2).</li>
+      <li>Account lock after 5 failed logins (5-minute cooldown).</li>
+      <li>All analysis results are private to your account.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

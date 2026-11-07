@@ -1,0 +1,30 @@
+<div class="notice"><i data-lucide="cpu"></i><div><strong>Sizing rule:</strong> {{ d.compute.vcpu_needed }} vCPU
+  ('{{ d.compute.requirement }}' workload + 1 vCPU per 2,000 expected users). Costs are estimates (24×7 on-demand, Linux) — verify with the provider pricing calculator.</div></div>
+
+<div class="facts-grid">
+  <div class="fact"><span>Compute Requirement</span><b>{{ d.compute.requirement }}</b></div>
+  <div class="fact"><span>Instance / Service Type</span><b>{{ d.compute.primary.instance }}</b></div>
+  <div class="fact"><span>Instances Required</span><b>{{ d.compute.primary.instances }}×</b></div>
+  <div class="fact"><span>Monthly Cost</span><b>{{ d.compute.primary.monthly | money }}</b></div>
+  <div class="fact"><span>Annual Cost</span><b>{{ d.compute.primary.annual | money }}</b></div>
+  <div class="fact"><span>Scalability</span><b>{{ d.compute.primary.scalability }}</b></div>
+  <div class="fact"><span>Performance Considerations</span><b>{{ d.compute.performance }}</b></div>
+  <div class="fact"><span>Estimated Compute Cost</span><b>{{ d.compute.primary.monthly | money }} /mo ({{ d.compute.primary.pricing_status or 'estimated' }})</b></div>
+</div>
+
+<h3 class="sub-heading">Compute comparison across providers</h3>
+<div class="pstore-grid">
+  {% for c in d.compute.providers %}
+  <article class="pstore-card slim {% if c.provider == d.inputs.provider %}is-primary{% endif %}">
+    <header><h4>{{ c.provider }}{% if c.provider == d.inputs.provider %}<span class="badge badge-blue">Selected</span>{% endif %}</h4>
+      <p class="pstore-service">{{ c.service }}</p></header>
+    <dl class="kv">
+      <div><dt>Instance</dt><dd>{{ c.instance }}</dd></div>
+      <div><dt>Instances</dt><dd>{{ c.instances }}×</dd></div>
+      <div><dt>Monthly Cost</dt><dd>{{ c.monthly | money }}</dd></div>
+      <div><dt>Annual Cost</dt><dd>{{ c.annual | money }}</dd></div>
+      <div><dt>Scalability</dt><dd>{{ c.scalability }}</dd></div>
+    </dl>
+  </article>
+  {% endfor %}
+</div>

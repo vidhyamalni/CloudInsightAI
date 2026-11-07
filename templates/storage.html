@@ -1,0 +1,13 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Storage Analysis{% endblock %}
+{% block pagesub %}{{ r.company_name }} · {{ r.provider }} · per-provider storage estimates{% endblock %}
+{% block content %}
+<div class="rpt-actions">
+  <a class="btn btn-small btn-outline" href="{{ url_for('report', rid=r.id) }}"><i data-lucide="file-text"></i> Full report</a>
+</div>
+{% include 'partials/_storage.html' %}
+{% endblock %}
+{% block scripts %}
+<script>window.REPORT_CHART = {{ chart | tojson }};</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

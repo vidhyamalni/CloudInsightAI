@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="app-shell" id="appShell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand side-brand" href="{{ url_for('index') }}">
+      <span class="brand-mark"><i data-lucide="cloud-cog"></i></span>
+      <span class="brand-name">CloudInsight <em>AI</em></span>
+    </a>
+    {% set ep = request.endpoint %}
+    <nav class="side-nav">
+      {% for ep_name, url, icon, label in [
+        ('dashboard', 'dashboard', 'layout-dashboard', 'Dashboard'),
+        ('analysis', 'analysis', 'cloud', 'Cloud Analysis'),
+        ('assistant', 'assistant', 'bot', 'AI Assistant'),
+        ('security_page', 'security_page', 'shield-check', 'Security Analysis'),
+        ('cost_page', 'cost_page', 'circle-dollar-sign', 'Cost Analysis'),
+        ('storage_page', 'storage_page', 'hard-drive', 'Storage Analysis'),
+        ('reports', 'reports', 'file-text', 'Reports'),
+        ('profile', 'profile', 'user', 'Profile')] %}
+        <a class="side-link {% if ep == ep_name %}is-active{% endif %}" href="{{ url_for(url) }}">
+          <i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
+      {% endfor %}
+      <a class="side-link side-logout" href="{{ url_for('logout') }}"><i data-lucide="log-out"></i><span>Logout</span></a>
+    </nav>
+    <div class="side-user"><span class="avatar">{{ current_user.name[:1] | upper }}</span>
+      <div><b>{{ current_user.name }}</b><small>{{ current_user.email }}</small></div></div>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="side-burger" id="sideBurger" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+      <div><h1 class="page-title">{% block pagetitle %}{% endblock %}</h1>
+        <p class="page-sub">{% block pagesub %}{% endblock %}</p></div>
+      <span class="topbar-chip"><i data-lucide="cloud"></i> {{ tagline }}</span>
+    </header>
+    <main class="app-content">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+{% endblock %}

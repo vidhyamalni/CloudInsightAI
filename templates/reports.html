@@ -1,0 +1,20 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Reports{% endblock %}
+{% block pagesub %}All generated cloud analyses{% endblock %}
+{% block content %}
+<div class="card-panel">
+  <div class="table-scroll">
+  <table class="data-table">
+    <thead><tr><th>Company</th><th>Provider</th><th>Industry</th><th>Est. Monthly</th><th>Score</th><th>Generated</th><th></th></tr></thead>
+    <tbody>{% for x in rows %}
+      <tr><td>{{ x.company_name }}</td><td>{{ x.provider }}</td><td>{{ x.industry }}</td>
+        <td>{{ x.data().cost.primary.monthly | money }}</td>
+        <td><span class="badge badge-blue">{{ x.data().security.score }}/100</span></td>
+        <td>{{ x.created_at.strftime('%b %d, %Y') }}</td>
+        <td class="cell-actions"><a class="btn btn-small" href="{{ url_for('report', rid=x.id) }}">View</a>
+          <a class="btn btn-small btn-outline" href="{{ url_for('report_pdf', rid=x.id) }}">PDF</a></td></tr>
+    {% else %}<tr><td colspan="7" class="cell-empty">No reports yet — run a cloud analysis first.</td></tr>{% endfor %}</tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

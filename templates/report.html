@@ -1,0 +1,75 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Analysis Report — {{ r.company_name }}{% endblock %}
+{% block pagesub %}{{ r.provider }} (auto-recommended) · {{ d.inputs.region }} · generated {{ d.meta.generated_at }}{% endblock %}
+{% block content %}
+
+<div class="rpt-actions">
+  <a class="btn btn-outline" href="{{ url_for('report_pdf', rid=r.id) }}"><i data-lucide="download"></i> Download PDF Report</a>
+  <a class="btn btn-primary" href="{{ url_for('assistant') }}"><i data-lucide="bot"></i> Ask the AI about this report</a>
+</div>
+
+<section class="rpt-section reveal" id="sec-1">
+  <h2 class="rpt-heading"><span>01</span>Executive Summary</h2>
+  <div class="card-panel"><p class="lead">{% for p in d.exec_summary %}{{ p }} {% endfor %}</p></div>
+</section>
+
+<section class="rpt-section reveal" id="sec-2">
+  <h2 class="rpt-heading"><span>02</span>Cloud Environment</h2>
+  <div class="card-panel">{% include 'partials/_env.html' %}</div>
+</section>
+
+{% if d.suitability %}
+<section class="rpt-section reveal" id="sec-3">
+  <h2 class="rpt-heading"><span>03</span>Provider Suitability Analysis</h2>
+  {% include 'partials/_suitability.html' %}
+</section>
+{% endif %}
+
+<section class="rpt-section reveal" id="sec-4">
+  <h2 class="rpt-heading"><span>04</span>Storage Analysis</h2>
+  {% include 'partials/_storage.html' %}
+</section>
+
+<section class="rpt-section reveal" id="sec-5">
+  <h2 class="rpt-heading"><span>05</span>Compute Analysis</h2>
+  {% include 'partials/_compute.html' %}
+</section>
+
+<section class="rpt-section reveal" id="sec-6">
+  <h2 class="rpt-heading"><span>06</span>Cost Analysis</h2>
+  {% include 'partials/_cost.html' %}
+</section>
+
+<section class="rpt-section reveal" id="sec-7">
+  <h2 class="rpt-heading"><span>07</span>Security Analysis</h2>
+  {% include 'partials/_security.html' %}
+</section>
+
+<section class="rpt-section reveal" id="sec-8">
+  <h2 class="rpt-heading"><span>08</span>Risk Analysis</h2>
+  <div class="card-panel">{% include 'partials/_risks.html' %}</div>
+</section>
+
+<section class="rpt-section reveal" id="sec-9">
+  <h2 class="rpt-heading"><span>09</span>Cloud Provider Comparison</h2>
+  {% include 'partials/_comparison.html' %}
+</section>
+
+<section class="rpt-section reveal" id="sec-10">
+  <h2 class="rpt-heading"><span>10</span>AI Insights</h2>
+  <div class="ai-panel card-panel" id="ai-insights" data-report="{{ r.id }}">
+    <div class="ai-skeleton"><div class="sk sk-title"></div><div class="sk"></div><div class="sk short"></div></div>
+  </div>
+</section>
+
+<section class="rpt-section reveal" id="sec-11">
+  <h2 class="rpt-heading"><span>11</span>Recommendations</h2>
+  <div class="card-panel"><ol class="rec-list">
+    {% for x in d.recommendations %}<li>{{ x }}</li>{% endfor %}</ol></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>window.REPORT_CHART = {{ chart | tojson }};</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

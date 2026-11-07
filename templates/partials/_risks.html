@@ -1,0 +1,9 @@
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Risk</th><th>Level</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+  <tbody>{% for x in d.security.register %}
+    <tr><td>{{ x.title }}</td><td><span class="badge badge-{{ 'gap' if x.level == 'High' else 'review' }}">{{ x.level }}</span></td>
+      <td>{{ x.likelihood }}</td><td>{{ x.impact }}</td><td class="cell-note">{{ x.mitigation }}</td></tr>
+  {% endfor %}</tbody>
+</table>
+</div>

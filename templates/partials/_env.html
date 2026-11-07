@@ -1,0 +1,18 @@
+<div class="facts-grid">
+  <div class="fact"><span>Company</span><b>{{ d.inputs.company_name }}</b></div>
+  <div class="fact"><span>Recommended Provider</span><b>{{ d.inputs.provider }}</b></div>
+  <div class="fact"><span>Provider Selected By</span><b>{{ d.inputs.get('provider_selected_by', 'User selection') }}</b></div>
+  <div class="fact"><span>Industry</span><b>{{ d.inputs.industry }}</b></div>
+  <div class="fact"><span>Region</span><b>{{ d.inputs.region }}</b></div>
+  <div class="fact"><span>Monthly Budget</span><b>{% if d.inputs.monthly_budget %}{{ d.inputs.monthly_budget | money }}{% else %}—{% endif %}</b></div>
+  <div class="fact"><span>Expected Users</span><b>{{ d.inputs.expected_users }}</b></div>
+  <div class="fact"><span>Compute Requirement</span><b>{{ d.inputs.compute_req }}</b></div>
+  <div class="fact"><span>Data Sensitivity</span><b>{{ d.inputs.data_sensitivity }}</b></div>
+  <div class="fact"><span>Availability</span><b>{{ d.inputs.availability }}</b></div>
+  <div class="fact"><span>Compliance</span><b>{{ d.inputs.compliance }}</b></div>
+  {% if d.inputs.extraction and d.inputs.extraction.file_name %}
+  <div class="fact"><span>Requirements Source</span><b>{{ d.inputs.extraction.file_name }}
+    ({{ 'Gemini extraction' if d.inputs.extraction.source == 'gemini' else 'rule-based extraction' }},
+    {{ d.inputs.extraction.fields_from_file | length }} fields from file)</b></div>
+  {% endif %}
+</div>

@@ -1,0 +1,88 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Dashboard{% endblock %}
+{% block pagesub %}Overview of your cloud analyses{% endblock %}
+{% block content %}
+{% if not d %}
+  {% include 'empty_state.html' %}
+{% else %}
+
+<div class="card-panel history-bar">
+  <div class="history-left">
+    <label for="reportSelect"><i data-lucide="history"></i> Viewing report:</label>
+    <select id="reportSelect">
+      {% for x in all_reports %}
+      <option value="{{ x.id }}" {% if x.id == r.id %}selected{% endif %}>
+        #{{ x.id }} — {{ x.company_name }} ({{ x.created_at.strftime('%b %d, %Y') }})
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <a class="btn btn-small btn-outline" href="{{ url_for('report', rid=r.id) }}">
+    <i data-lucide="file-text"></i> Open full report</a>
+</div>
+
+<div class="stat-cards">
+  <article class="stat-card reveal"><i data-lucide="shield-check"></i><span>Security Score</span>
+    <b>{{ d.security.score }}<small>/100</small></b><em>{{ d.security.risk_level }} risk · simulated analysis</em></article>
+  <article class="stat-card reveal"><i data-lucide="alert-triangle"></i><span>Risk Level</span>
+    <b>{{ d.security.risk_level }}</b><em>{{ d.security.high }} high · {{ d.security.medium }} medium · {{ d.security.low }} low</em></article>
+  <article class="stat-card reveal"><i data-lucide="circle-dollar-sign"></i><span>Estimated Monthly Cost</span>
+    <b>{{ d.cost.primary.monthly | money }}</b><em>{{ d.meta.pricing_status or 'estimated' }} pricing</em></article>
+  <article class="stat-card reveal"><i data-lucide="hard-drive"></i><span>Required Storage</span>
+    <b>{{ d.storage.required_gb }} GB</b><em>{{ d.storage.primary.service }}</em></article>
+  <article class="stat-card reveal"><i data-lucide="cloud"></i><span>Recommended Provider</span>
+    <b class="provider-name-text">{{ d.inputs.provider }}</b><em>{{ d.inputs.region }}</em></article>
+  <article class="stat-card reveal"><i data-lucide="file-text"></i><span>Reports Generated</span>
+    <b>{{ reports_count }}</b><em>latest {{ r.created_at.strftime('%b %d, %Y') }}</em></article>
+</div>
+
+{% if all_reports | length > 1 %}
+<div class="card-panel">
+  <h3 class="sub-heading tight">Analysis Trends — cost &amp; security across all your reports</h3>
+  <div class="chart-box"><canvas id="trendChart"></canvas></div>
+</div>
+{% endif %}
+
+<div class="dash-grid">
+  <div class="card-panel span-2"><h3 class="sub-heading tight">Cost Overview (estimated monthly, by provider)</h3>
+    <div class="chart-box"><canvas id="dashCost"></canvas></div></div>
+  <div class="card-panel"><h3 class="sub-heading tight">Security Risk</h3>
+    <div class="chart-box"><canvas id="dashRisk"></canvas></div></div>
+  <div class="card-panel"><h3 class="sub-heading tight">Storage Usage (est. footprint, GB)</h3>
+    <div class="chart-box"><canvas id="dashStorage"></canvas></div></div>
+  <div class="card-panel span-2"><h3 class="sub-heading tight">Provider Comparison (capability profile)</h3>
+    <div class="chart-box"><canvas id="dashRadar"></canvas></div></div>
+</div>
+
+<div class="card-panel">
+  <h3 class="sub-heading tight">Recent Reports</h3>
+  <div class="table-scroll">
+  <table class="data-table">
+    <thead><tr><th>Company</th><th>Provider</th><th>Est. Monthly</th><th>Security Score</th><th>Generated</th><th></th></tr></thead>
+    <tbody>{% for x in recent %}
+      <tr><td>{{ x.company_name }}</td><td>{{ x.provider }}</td><td>{{ x.data().cost.primary.monthly | money }}</td>
+        <td><span class="badge badge-blue">{{ x.data().security.score }}/100</span></td>
+        <td>{{ x.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+        <td class="cell-actions"><a class="btn btn-small" href="{{ url_for('report', rid=x.id) }}">View</a>
+          <a class="btn btn-small btn-outline" href="{{ url_for('report_pdf', rid=x.id) }}">PDF</a></td></tr>
+    {% endfor %}</tbody>
+  </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if chart %}
+<script>window.DASH_CHART = {{ chart | tojson }}; window.TREND_CHART = {{ trend | tojson }};</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const sel = document.getElementById("reportSelect");
+    if (sel) sel.addEventListener("change", function () {
+      window.location.href = "/dashboard?report=" + sel.value;
+    });
+  });
+</script>
+{% endblock %}

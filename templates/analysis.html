@@ -1,0 +1,64 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Cloud Analysis{% endblock %}
+{% block pagesub %}Describe your company — the system analyzes all six providers automatically{% endblock %}
+{% block content %}
+
+<div class="notice"><i data-lucide="sparkles"></i><div><strong>No provider selection needed.</strong>
+  All six providers (AWS, Microsoft Azure, Google Cloud, IBM Cloud, Oracle Cloud, Tencent Cloud) are analyzed
+  automatically and the most suitable one is recommended with a full explanation.</div></div>
+
+<form class="analysis-form card-panel" id="analysis-form" method="post" action="{{ url_for('analysis') }}" enctype="multipart/form-data">
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="companyFile" name="company_file" accept=".txt,.md,.json,.csv,.pdf" hidden>
+    <i data-lucide="file-up"></i>
+    <div class="upload-text">
+      <b>Optional — upload a company requirements file</b>
+      <span>The AI extracts the requirements automatically. TXT, MD, JSON, CSV or PDF (max 2 MB).</span>
+    </div>
+    <button type="button" class="btn btn-outline" id="uploadBtn">Choose file</button>
+  </div>
+  <div class="extract-result" id="extractResult" hidden></div>
+
+  <div class="form-grid">
+    <div class="field"><label for="company_name"><i data-lucide="building-2"></i> Company Name</label>
+      <input id="company_name" name="company_name" required placeholder="e.g. Northwind Analytics"></div>
+    <div class="field"><label for="industry"><i data-lucide="briefcase"></i> Industry</label>
+      <select id="industry" name="industry">{% for x in ['Technology','Finance','Healthcare','Retail','Manufacturing','Education','Media','Other'] %}
+        <option>{{ x }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="region"><i data-lucide="map-pin"></i> Region</label>
+      <select id="region" name="region">{% for x in ['us-east-1','us-west-2','eu-west-1','eu-central-1','ap-southeast-1','ap-northeast-1','Global / multi-region'] %}
+        <option>{{ x }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="monthly_budget"><i data-lucide="wallet"></i> Monthly Budget (USD)</label>
+      <input id="monthly_budget" type="number" min="0" step="10" name="monthly_budget" placeholder="e.g. 1500"></div>
+    <div class="field"><label for="storage_gb"><i data-lucide="hard-drive"></i> Required Storage (GB)</label>
+      <input id="storage_gb" type="number" min="1" name="storage_gb" required placeholder="e.g. 500"></div>
+    <div class="field"><label for="expected_users"><i data-lucide="users"></i> Expected Users</label>
+      <input id="expected_users" type="number" min="1" name="expected_users" required placeholder="e.g. 2000"></div>
+    <div class="field"><label for="compute_req"><i data-lucide="cpu"></i> Compute Requirement</label>
+      <select id="compute_req" name="compute_req">{% for x in ['Light','Moderate','Heavy','Intensive'] %}
+        <option {% if x == 'Moderate' %}selected{% endif %}>{{ x }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="data_sensitivity"><i data-lucide="lock"></i> Data Sensitivity</label>
+      <select id="data_sensitivity" name="data_sensitivity">{% for x in ['Public','Internal','Confidential','Restricted'] %}
+        <option {% if x == 'Internal' %}selected{% endif %}>{{ x }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="availability"><i data-lucide="activity"></i> Availability Requirement</label>
+      <select id="availability" name="availability">{% for x in ['Basic','Standard','High','Mission-critical'] %}
+        <option {% if x == 'Standard' %}selected{% endif %}>{{ x }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="compliance"><i data-lucide="scale"></i> Compliance Requirement</label>
+      <select id="compliance" name="compliance">
+        {% for x in ['None','GDPR','HIPAA','PCI DSS','SOC 2','ISO 27001'] %}<option>{{ x }}</option>{% endfor %}
+      </select></div>
+  </div>
+  <div class="form-foot">
+    <p class="form-note"><i data-lucide="info"></i> All results are clearly labeled as estimates and verified against your assumptions.</p>
+    <button class="btn btn-primary btn-lg" type="submit">Analyze Cloud Environment <i data-lucide="scan-search"></i></button>
+  </div>
+</form>
+
+<div class="load-overlay" id="analysis-overlay" aria-hidden="true">
+  <div class="load-box">
+    <div class="spinner"></div>
+    <p class="load-title">Analyzing your cloud environment</p>
+    <p class="load-status">Evaluating storage requirements…</p>
+  </div>
+</div>
+{% endblock %}

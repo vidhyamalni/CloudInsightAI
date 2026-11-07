@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% block title %}CloudInsight AI — {{ tagline }}{% endblock %}
+{% block body %}
+
+<header class="site-nav" id="siteNav">
+  <div class="container nav-inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark"><i data-lucide="cloud-cog"></i></span>
+      <span class="brand-name">CloudInsight <em>AI</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#home">Home</a><a href="#features">Features</a><a href="#solutions">Solutions</a>
+      <a href="#about">About</a><a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn-ghost" href="{{ url_for('login_route') }}">Login</a>
+    <button class="nav-burger" id="navBurger" aria-label="Menu"><i data-lucide="menu"></i></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="container hero-grid">
+    <div class="hero-copy reveal">
+      <span class="hero-kicker"><i data-lucide="sparkles"></i> AI-Powered Cloud Intelligence</span>
+      <h1>CloudInsight <span class="grad-text">AI</span></h1>
+      <p class="hero-sub">AI-Powered Cloud Security, Risk &amp; Cost Analytics Platform</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="{{ url_for('analysis') }}">Start Free Analysis <i data-lucide="arrow-right"></i></a>
+        <a class="btn btn-outline btn-lg" href="#features">See what's inside</a>
+      </div>
+      <div class="hero-meta">
+        <span><i data-lucide="shield-check"></i> 13 security domains</span>
+        <span><i data-lucide="cloud"></i> 6 cloud providers</span>
+        <span><i data-lucide="file-text"></i> Full PDF report</span>
+      </div>
+    </div>
+
+    <div class="hero-visual reveal" aria-hidden="true">
+      <svg viewBox="0 0 520 460" class="cloud-illu">
+        <defs>
+          <linearGradient id="gCloud" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2563EB"/><stop offset="1" stop-color="#7C3AED"/>
+          </linearGradient>
+          <linearGradient id="gBar" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#2563EB"/><stop offset="1" stop-color="#06B6D4"/>
+          </linearGradient>
+          <radialGradient id="gGlow"><stop offset="0" stop-color="#06B6D4" stop-opacity=".28"/>
+            <stop offset="1" stop-color="#06B6D4" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle cx="260" cy="235" r="200" fill="url(#gGlow)" class="pulse"/>
+        <circle class="orbit" cx="260" cy="235" r="192" fill="none" stroke="#C7D6F5" stroke-width="1.5" stroke-dasharray="4 12"/>
+        <g class="floaty">
+          <path d="M120,330 C70,330 40,295 40,255 C40,218 66,188 102,181 C108,128 152,88 206,88 C258,88 300,122 311,169 C352,168 392,197 392,240 C392,290 355,330 305,330 Z"
+                fill="#F8FAFF" stroke="url(#gCloud)" stroke-width="3.5" stroke-linejoin="round"/>
+          <line x1="95" y1="300" x2="300" y2="300" stroke="#DCE4F0" stroke-width="2"/>
+          <g class="bars">
+            <rect x="110" y="240" width="22" height="60" rx="4" fill="url(#gBar)"/>
+            <rect x="145" y="215" width="22" height="85" rx="4" fill="url(#gBar)" style="animation-delay:.15s"/>
+            <rect x="180" y="255" width="22" height="45" rx="4" fill="url(#gBar)" style="animation-delay:.3s"/>
+            <rect x="215" y="195" width="22" height="105" rx="4" fill="url(#gBar)" style="animation-delay:.45s"/>
+            <rect x="250" y="230" width="22" height="70" rx="4" fill="url(#gBar)" style="animation-delay:.6s"/>
+          </g>
+          <polyline class="trend" points="110,225 155,200 190,240 225,180 262,212 292,175"
+                    fill="none" stroke="#7C3AED" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <g class="shield">
+            <circle cx="368" cy="150" r="34" fill="#fff" stroke="url(#gCloud)" stroke-width="3"/>
+            <path d="M368 132 l16 6 v12 c0 10 -7 17 -16 20 c-9 -3 -16 -10 -16 -20 v-12 z"
+                  fill="#EDF2FF" stroke="#2563EB" stroke-width="2.5"/>
+            <rect x="363" y="151" width="10" height="9" rx="2" fill="#2563EB"/>
+            <path d="M364 151 v-4 a4 4 0 0 1 8 0 v4" fill="none" stroke="#2563EB" stroke-width="2.5"/>
+          </g>
+        </g>
+        <g class="particles">
+          <circle class="p1" cx="70" cy="120" r="4" fill="#06B6D4"/>
+          <circle class="p2" cx="470" cy="100" r="5" fill="#2563EB"/>
+          <circle class="p3" cx="452" cy="330" r="3.5" fill="#7C3AED"/>
+          <circle class="p4" cx="60" cy="360" r="5" fill="#7C3AED"/>
+          <circle class="p5" cx="330" cy="52" r="3.5" fill="#06B6D4"/>
+          <circle class="p6" cx="180" cy="410" r="4" fill="#2563EB"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- PROVIDERS -->
+<section class="section section-soft" id="providers">
+  <div class="container">
+    <div class="section-head reveal"><span class="eyebrow">Coverage</span><h2>Cloud Providers We Analyze</h2></div>
+    <div class="provider-grid">
+      {% set logos = {
+        'AWS': '<svg viewBox="0 0 64 44"><text x="32" y="22" text-anchor="middle" font-family="Sora,Arial" font-weight="800" font-size="17" fill="#232F3E">aws</text><path d="M12 30c12 8 28 8 40 0" stroke="#FF9900" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M49 27l7 3-4.5 4.5" fill="none" stroke="#FF9900" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        'Microsoft Azure': '<svg viewBox="0 0 48 44"><path d="M19 5h10L19 39H8z" fill="#2563EB"/><path d="M27 13l11 0 8 26H20z" fill="#7C3AED" opacity=".85"/></svg>',
+        'Google Cloud': '<svg viewBox="0 0 52 40"><path d="M15,34 C8,34 4,29 4,24 C4,19 8,15 13,15 C15,9 21,5 27,5 C34,5 40,10 41,17 C47,17 50,21 50,26 C50,31 46,34 41,34 Z" fill="none" stroke="#4285F4" stroke-width="3"/><circle cx="16" cy="24" r="3" fill="#EA4335"/><circle cx="26" cy="24" r="3" fill="#FBBC05"/><circle cx="36" cy="24" r="3" fill="#34A853"/></svg>',
+        'IBM Cloud': '<svg viewBox="0 0 64 40"><defs><pattern id="ibmst" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2.3" fill="#1F70C1"/></pattern></defs><text x="32" y="24" text-anchor="middle" font-family="Sora,Arial" font-weight="800" font-size="19" fill="url(#ibmst)">IBM</text></svg>',
+        'Oracle Cloud': '<svg viewBox="0 0 64 40"><rect x="9" y="12" width="46" height="17" rx="8.5" fill="none" stroke="#F80000" stroke-width="5"/></svg>',
+        'Tencent Cloud': '<svg viewBox="0 0 52 40"><path d="M14,32 C8,32 4,28 4,23 C4,18 8,15 12,14 C14,8 20,4 26,4 C33,4 39,9 40,16 C46,16 49,20 49,25 C49,30 45,32 41,32 Z" fill="#0052D9"/><path d="M14 25 q6 -6 12 0 t12 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>'
+      } %}
+      {% for name, svg in logos.items() %}
+      <article class="provider-card reveal">
+        <div class="provider-logo">{{ svg | safe }}</div>
+        <span class="provider-name">{{ name }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="container features-grid">
+    <div class="features-intro reveal">
+      <span class="eyebrow">Features</span>
+      <h2>One platform, three analytical lenses</h2>
+      <p>CloudInsight AI turns a short questionnaire into a structured, provider-aware analysis — storage, compute, cost, security and AI insight in a single report.</p>
+      <a class="btn btn-primary" href="{{ url_for('analysis') }}">Run an analysis <i data-lucide="arrow-right"></i></a>
+    </div>
+    <div class="features-list">
+      <div class="feature-row reveal"><span class="feature-num">01</span>
+        <div><h3><i data-lucide="shield-check"></i> Security &amp; Risk Posture</h3>
+        <p>Thirteen control domains scored against your sensitivity, compliance and availability requirements — with a visual risk dashboard.</p></div></div>
+      <div class="feature-row reveal"><span class="feature-num">02</span>
+        <div><h3><i data-lucide="hard-drive"></i> Storage Economics</h3>
+        <p>Per-provider storage services, cost per GB, redundancy for your sensitivity tier, retention, encryption and backup expectations.</p></div></div>
+      <div class="feature-row reveal"><span class="feature-num">03</span>
+        <div><h3><i data-lucide="chart-column"></i> Cost Intelligence</h3>
+        <p>Interactive provider comparison with transparent assumptions — you always see why the numbers differ.</p></div></div>
+      <div class="feature-row reveal"><span class="feature-num">04</span>
+        <div><h3><i data-lucide="bot"></i> AI Analyst</h3>
+        <p>The Gemini-powered assistant reads your generated report and answers questions about cost, risk and storage security.</p></div></div>
+      <div class="feature-row reveal"><span class="feature-num">05</span>
+        <div><h3><i data-lucide="file-text"></i> Presentation-ready Reports</h3>
+        <p>A ten-section report with one-click PDF export — the same numbers on screen and in the document.</p></div></div>
+    </div>
+  </div>
+</section>
+<!-- PROVIDERS -->
+<section class="section section-soft" id="providers">
+  <div class="container">
+    <div class="section-head reveal"><span class="eyebrow">Coverage</span><h2>Cloud Providers We Analyze</h2></div>
+    <div class="provider-grid">
+      {% set pl = [('AWS','aws'),('Microsoft Azure','azure'),('Google Cloud','gcp'),
+                   ('IBM Cloud','ibm'),('Oracle Cloud','oracle'),('Tencent Cloud','tencent')] %}
+      {% for name, img in pl %}
+      <article class="provider-card reveal">
+        <div class="provider-logo"><img src="{{ url_for('static', filename='img/providers/' ~ img ~ '.png') }}" alt="{{ name }} logo"></div>
+        <span class="provider-name">{{ name }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTIONS -->
+<section class="section section-soft" id="solutions">
+  <div class="container">
+    <div class="section-head reveal"><span class="eyebrow">Solutions</span><h2>Built for the questions you actually ask</h2></div>
+    <div class="tabs reveal" role="tablist">
+      <button class="tab is-active" data-tab="sec">Security &amp; Risk</button>
+      <button class="tab" data-tab="cost">Cost Optimization</button>
+      <button class="tab" data-tab="stor">Storage Planning</button>
+    </div>
+    <div class="tab-panels reveal">
+      <div class="tab-panel is-active" data-panel="sec">
+        <i data-lucide="scan-search"></i>
+        <h3>Where is my risk concentrated?</h3>
+        <p>Score gauge, risk distribution and a domain-by-domain findings table across IAM, MFA, encryption, network, backup and compliance.</p>
+        <ul><li>Security score out of 100</li><li>High / medium / low distribution</li><li>Actionable mitigations per finding</li></ul>
+      </div>
+      <div class="tab-panel" data-panel="cost">
+        <i data-lucide="circle-dollar-sign"></i>
+        <h3>Which provider fits my budget?</h3>
+        <p>Stacked storage / compute / network comparison across providers, plus the exact assumptions behind every estimate.</p>
+        <ul><li>Monthly &amp; annual projections</li><li>Budget utilization indicator</li><li>Cost-driver explanation</li></ul>
+      </div>
+      <div class="tab-panel" data-panel="stor">
+        <i data-lucide="database"></i>
+        <h3>What will my data really cost?</h3>
+        <p>Dedicated storage analysis per provider: service, $/GB, monthly and annual estimates, encryption, backup and retention.</p>
+        <ul><li>Six providers side by side</li><li>Sensitivity-based redundancy</li><li>Security recommendations</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="section" id="about">
+  <div class="container about-grid">
+    <div class="reveal"><span class="eyebrow">About</span>
+      <h2>Honest analytics, clearly labeled</h2>
+      <p>CloudInsight AI uses configured pricing baselines and a rule-based security model. Where live provider data is not connected, every figure is explicitly marked as an estimate — so your analysis stays credible in front of any audience.</p></div>
+    <div class="about-stats reveal">
+      <div><b>6</b><span>providers analyzed</span></div>
+      <div><b>13</b><span>security domains</span></div>
+      <div><b>10</b><span>report sections</span></div>
+      <div><b>PDF</b><span>one-click export</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section section-soft" id="contact">
+  <div class="container contact-grid">
+    <div class="reveal"><span class="eyebrow">Contact</span><h2>Talk to us</h2>
+      <p>Questions about the platform, the methodology or a demo for your team — send a note and we'll reply.</p></div>
+    <form class="contact-form reveal" id="contactForm">
+      <div class="field"><label for="c-name"><i data-lucide="user"></i> Name</label><input id="c-name" name="name" required></div>
+      <div class="field"><label for="c-email"><i data-lucide="mail"></i> Email</label><input id="c-email" type="email" name="email" required></div>
+      <div class="field"><label for="c-msg"><i data-lucide="message-square"></i> Message</label><textarea id="c-msg" name="message" rows="4" required></textarea></div>
+      <button class="btn btn-primary" type="submit">Send message <i data-lucide="send"></i></button>
+    </form>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <span class="brand"><span class="brand-mark small"><i data-lucide="cloud-cog"></i></span> CloudInsight AI</span>
+    <span>© {{ year }} CloudInsight AI — {{ tagline }}</span>
+  </div>
+</footer>
+{% endblock %}

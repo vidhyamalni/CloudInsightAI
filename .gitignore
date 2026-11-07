@@ -1,0 +1,17 @@
+﻿.env
+*.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.sqlite
+*.sqlite3
+instance/
+uploads/
+*.log
+.vscode/
+cache/
+gemini_key.txt
+*key*.txt
+gemini_key.txt

@@ -1,0 +1,32 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}AI Assistant{% endblock %}
+{% block pagesub %}Answers grounded in your generated cloud analysis{% endblock %}
+{% block content %}
+{% if not r %}
+  {% include 'empty_state.html' %}
+{% else %}
+<div class="chat-shell card-panel">
+  <div class="chat-context"><i data-lucide="link"></i> Grounded in: <b>{{ r.company_name }}</b> — {{ r.provider }} ·
+    {{ r.data().cost.primary.monthly | money }}/mo (estimated) · Security {{ r.data().security.score }}/100
+    <span class="badge {{ 'badge-ok' if gemini_ok else 'badge-review' }}">{{ 'Gemini connected' if gemini_ok else 'Offline mode' }}</span></div>
+
+  <div class="chat-scroll" id="chatScroll">
+    {% for m in msgs %}
+      <div class="msg {{ 'user' if m.role == 'user' else 'ai' }}"><div class="bubble">{{ m.content }}</div></div>
+    {% else %}
+      <div class="msg ai"><div class="bubble">Hi {{ current_user.name.split()[0] }} — I've read your latest report.
+        Ask me about cost drivers, storage security or your main risks.</div></div>
+    {% endfor %}
+  </div>
+
+  <div class="chat-suggestions">
+    {% for s in suggestions %}<button class="chip" data-q="{{ s }}">{{ s }}</button>{% endfor %}
+  </div>
+
+  <form class="chat-input" id="chatForm">
+    <input id="chatText" placeholder="Ask about your analysis…" autocomplete="off" required>
+    <button class="btn btn-primary" type="submit" aria-label="Send"><i data-lucide="send"></i></button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
