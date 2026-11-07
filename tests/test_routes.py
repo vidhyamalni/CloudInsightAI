@@ -1,6 +1,5 @@
 """Route-level tests: login, ownership, dashboard summary, history, analysis interfaces, assistant scope.
 
-NOT RUN in the sandbox where this file was written (flask-login / flask-sqlalchemy were not installable there).
 Run it on your machine:   python -m unittest tests.test_routes -v
 Uses an in-memory SQLite database; Gemini is replaced by a stub; live pricing is off.
 """
@@ -34,11 +33,20 @@ class RouteTests(unittest.TestCase):
         cls.m = appmod
         cls.app = appmod.app
         cls.app.config.update(TESTING=True, CSRF_ENABLED=False)   # CSRF itself is covered in test_security.py and the test below
-        # stub Gemini: no network, deterministic
+        # stub Gemini: no network, deterministic (originals are restored in tearDownClass so other test modules are unaffected)
+        cls._orig_ai = {n: getattr(cls.m.ai, n) for n in ("gemini_ready", "ask", "suitability_explanation", "last_error")}
         cls.m.ai.gemini_ready = lambda: True
         cls.m.ai.ask = lambda q, report, history: (True, f"stub answer ({'report' if report else 'general'}, {len(history)} prior)")
         cls.m.ai.suitability_explanation = lambda *a, **k: (False, None)
         cls.m.ai.last_error = lambda: None
+
+    @classmethod
+    def tearDownClass(cls):
+        for n, fn in cls._orig_ai.items():
+            setattr(cls.m.ai, n, fn)
+        with cls.app.app_context():
+            cls.m.db.session.remove()
+            cls.m.db.engine.dispose()
 
     def setUp(self):
         with self.app.app_context():
@@ -94,7 +102,7 @@ class RouteTests(unittest.TestCase):
         c = self.client("a@x.com")
         r = c.post("/analysis", data=dict(FORM, storage_gb="abc"))
         self.assertEqual(r.status_code, 200)
-        self.assertIn("valid numbers", r.get_data(as_text=True))
+        self.assertIn("must be a number", r.get_data(as_text=True))
 
     def test_two_users_are_isolated(self):
         a, b = self.client("a@x.com"), self.client("b@x.com")
