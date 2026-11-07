@@ -1,4 +1,4 @@
-{% macro pbadge(s) %}<span class="badge badge-{{ 'ok' if s == 'live' else ('blue' if s == 'cached' else 'review') }}">{{ s }}</span>{% endmacro %}
+{% macro pbadge(s) %}<span class="badge badge-{{ 'ok' if s == 'live' else ('blue' if s == 'cached' else 'review') }}" title="{{ {'live': 'Fetched from an official price API during this analysis', 'cached': 'Previously fetched live from an official API, served from cache', 'estimated': 'Stored estimate maintained in the app - not a live price', 'mixed': 'Some price points are live/cached, others are estimates'}.get(s, '') }}">{{ s }}</span>{% endmacro %}
 {% if d.pricing %}
 <div class="notice {{ 'warn' if d.pricing.overall_status in ['estimated', 'mixed'] else '' }}"><i data-lucide="info"></i><div>
   <strong>Pricing basis: {{ d.pricing.overall_status }}.</strong> {{ d.meta.pricing_source }}
@@ -33,12 +33,31 @@
   <tbody>{% for r in d.cost.comparison %}
     <tr><td>{{ r.provider }}</td><td>{{ r.storage | money }}</td><td>{{ r.compute | money }}</td><td>{{ r.network | money }}</td>
       <td><b>{{ r.monthly | money }}</b></td><td>{{ r.annual | money }}</td>
-      <td>{{ pbadge(r.pricing_status or 'estimated') }}</td></tr>
+      <td>{{ pbadge(r.pricing_status or 'estimated') }}
+        {% if r.component_status %}<div class="comp-status">
+          {% for k, lbl in [('storage', 'Storage'), ('compute', 'Compute'), ('network', 'Egress')] %}<span>{{ lbl }}: <b class="st-{{ r.component_status[k] }}">{{ r.component_status[k] }}</b></span>{% endfor %}
+        </div>{% endif %}</td></tr>
   {% endfor %}</tbody>
 </table>
 </div>
 
 {% if d.pricing %}
+<h3 class="sub-heading">Where each provider's prices come from</h3>
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Provider</th><th>Storage</th><th>Compute</th><th>Egress</th><th>Official price API in this app</th></tr></thead>
+  <tbody>{% for name, comps in d.pricing.providers.items() %}
+    <tr><td>{{ name }}</td>
+      {% for comp in ['storage', 'compute', 'egress'] %}<td>{{ pbadge(comps[comp].status) }}</td>{% endfor %}
+      <td class="cell-note">{% set sup = (d.pricing.live_supported or {}).get(name) %}
+        {% if d.pricing.live_supported is not defined %}<small>not recorded for this report</small>
+        {% elif sup %}Yes &mdash; {{ sup | join(', ') }} (egress stays an estimate)
+        {% else %}No &mdash; stored estimate only{% endif %}</td></tr>
+  {% endfor %}</tbody>
+</table>
+</div>
+<p class="source-line"><i data-lucide="info"></i> A provider is labelled <b>live</b> only for price points actually fetched from its official API. Everything else is a manually maintained estimate and is never shown as live.</p>
+
 <h3 class="sub-heading">Pricing sources and timestamps</h3>
 <div class="table-scroll">
 <table class="data-table">

@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+{% block title %}Project Overview — CloudInsight AI{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/overview.css') }}">
+
+<header class="site-nav" id="siteNav">
+  <div class="container nav-inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark"><i data-lucide="cloud-cog"></i></span>
+      <span class="brand-name">CloudInsight <em>AI</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('index') }}#features">Features</a>
+      <a href="{{ url_for('project_overview') }}" aria-current="page" style="color:var(--blue)">Project Overview</a>
+      <a href="{{ url_for('index') }}#contact">Contact</a>
+    </nav>
+    {% if current_user.is_authenticated %}
+      <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% else %}
+      <a class="btn btn-ghost" href="{{ url_for('login_route') }}">Login</a>
+    {% endif %}
+    <button class="nav-burger" id="navBurger" aria-label="Menu"><i data-lucide="menu"></i></button>
+  </div>
+</header>
+
+{% set S = summary %}
+<section class="po-hero">
+  <div class="container">
+    <span class="eyebrow">Project Overview</span>
+    <h1>About <span class="grad-text">CloudInsightAI</span></h1>
+    <p>{{ ps.project.purpose }}</p>
+    <div class="po-hero-meta">
+      <span class="po-pill"><i data-lucide="layers"></i> Stage: {{ ps.project.stage }}</span>
+      <span class="po-pill"><i data-lucide="calendar-check"></i> Status last updated {{ ps.last_updated }}</span>
+      <span class="po-pill"><i data-lucide="badge-check"></i> {{ S.counts.completed_verified }} of {{ S.total }} modules verified by tests</span>
+    </div>
+  </div>
+</section>
+
+<nav class="po-toc" aria-label="Sections">
+  <div class="container">
+    <a href="#about">About</a><a href="#features">Features</a><a href="#providers">Providers</a>
+    <a href="#stack">Technology</a><a href="#architecture">Architecture</a><a href="#workflow">How it works</a>
+    <a href="#status">Current status</a><a href="#progress">Progress</a><a href="#roadmap">Roadmap</a>
+    <a href="#future">Future ideas</a><a href="#info">Project info</a>
+  </div>
+</nav>
+
+<!-- 1. ABOUT -->
+<section class="po-sec" id="about">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">1 · About</span><h2>What is CloudInsightAI?</h2>
+      <p>{{ ps.about.what }}</p></div>
+    <div class="po-grid po-g2">
+      <div class="po-card po-qa"><h3>Why it was developed</h3><p>{{ ps.about.why }}</p></div>
+      <div class="po-card po-qa"><h3>The problem it addresses</h3><p>{{ ps.about.problem }}</p></div>
+      <div class="po-card po-qa"><h3>Who can use it</h3><p>{{ ps.about.who }}</p></div>
+      <div class="po-card po-qa"><h3>Main objectives</h3>
+        <ul class="dot-list">{% for o in ps.about.objectives %}<li>{{ o }}</li>{% endfor %}</ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. FEATURES -->
+<section class="po-sec alt" id="features">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">2 · Platform features</span><h2>Modules and what they do</h2>
+      <p>Each description reflects the implemented code. The badges are read from the status data below, not typed separately.</p></div>
+    <div class="po-grid po-g2">
+      {% for m in ps.modules_overview %}
+      <article class="po-card">
+        <h3><i data-lucide="{{ m.icon }}"></i> {{ m.name }}</h3>
+        <p><b>Purpose:</b> {{ m.purpose }}</p>
+        <p>{{ m.how }}</p>
+        <div class="po-badges">{% for st in m.statuses %}<span class="po-b {{ st.key }}" title="{{ st.name }}">{{ st.label }}</span>{% endfor %}</div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- 3. PROVIDERS -->
+<section class="po-sec" id="providers">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">3 · Supported cloud providers</span><h2>Six providers, one comparison</h2>
+      <p>All six are scored on the same nine dimensions and priced with the same formulas, so the comparison is like for like. No provider is connected to a real customer account.</p></div>
+    <div class="po-grid po-g3">
+      {% for p in provider_rows %}
+      <article class="po-card po-prov">
+        <h3>{{ p.name }}
+          {% if p.live %}<span class="po-b live">Live price feed</span>{% else %}<span class="po-b estimate">Stored estimate</span>{% endif %}</h3>
+        <dl>
+          <div><dt>Storage service modelled</dt><dd>{{ p.storage }}</dd></div>
+          <div><dt>Compute service modelled</dt><dd>{{ p.compute }}</dd></div>
+          <div><dt>Compliance profile on file</dt><dd>{{ p.compliance | join(', ') }}</dd></div>
+          <div><dt>Pricing integration</dt><dd>
+            {% if p.live %}Live from the provider's public price API for {{ p.live_components | join(' and ') }}; other components are stored estimates.
+            {% else %}None. Prices come from stored estimates in the pricing baseline.{% endif %}</dd></div>
+        </dl>
+      </article>
+      {% endfor %}
+    </div>
+    <div class="notice warn po-note"><i data-lucide="triangle-alert"></i>
+      <div>Stored estimates verified against provider price lists: <strong>{{ baseline.verified }} of {{ baseline.entries }}</strong>
+        {% if not baseline.last_manual_review %}(no manual review date recorded yet){% else %}(last manual review {{ baseline.last_manual_review }}){% endif %}.
+        Every report labels each price as live, cached, or estimated.</div></div>
+  </div>
+</section>
+
+<!-- 4. STACK -->
+<section class="po-sec alt" id="stack">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">4 · Technology stack</span><h2>What it is built with</h2>
+      <p>Only technologies found in the project's source and dependency list are shown.</p></div>
+    <div class="po-grid po-g4">
+      {% for g in ps.stack %}
+      <div class="po-card po-stack">
+        <h3><i data-lucide="{{ g.icon }}"></i> {{ g.layer }}</h3>
+        <ul>{% for it in g["items"] %}<li><b>{{ it.name }}</b><span>{{ it.detail }}</span></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- 5. ARCHITECTURE -->
+<section class="po-sec" id="architecture">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">5 · System architecture</span><h2>How the pieces fit together</h2>
+      <p>This diagram is drawn from the project's actual modules and routes. Dashed lines are optional or fallback paths.</p></div>
+    <div class="po-diagram" role="img" aria-label="Architecture: browser, Flask routes, Python service modules, then SQLite, pricing files, Azure price API and Gemini API">
+<svg viewBox="0 0 1000 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7C8DAE"/></marker>
+  </defs>
+
+  <!-- Client -->
+  <rect class="band" x="50" y="8" width="930" height="68" rx="12"/>
+  <text class="t-h" x="64" y="26">CLIENT</text>
+  <rect class="bx" x="70" y="34" width="890" height="32" rx="8"/>
+  <text class="t-b" x="515" y="54" text-anchor="middle">User's browser · server-rendered Jinja2 pages · vanilla JavaScript · Chart.js charts</text>
+  <line class="ln" x1="500" y1="68" x2="500" y2="96" marker-start="url(#ar)" marker-end="url(#ar)"/>
+
+  <!-- Flask -->
+  <rect class="band" x="50" y="92" width="930" height="120" rx="12"/>
+  <text class="t-h" x="64" y="110">FLASK APPLICATION · app.py</text>
+  <g>
+    <rect class="bx core" x="62" y="124" width="170" height="76" rx="10"/>
+    <text class="t-b" x="147" y="146" text-anchor="middle">Authentication</text>
+    <text class="t-s" x="147" y="165" text-anchor="middle">/login · /logout · /profile</text>
+    <text class="t-s" x="147" y="182" text-anchor="middle">Flask-Login sessions</text>
+
+    <rect class="bx core" x="242" y="124" width="170" height="76" rx="10"/>
+    <text class="t-b" x="327" y="146" text-anchor="middle">Cloud Analysis</text>
+    <text class="t-s" x="327" y="165" text-anchor="middle">/analysis</text>
+    <text class="t-s" x="327" y="182" text-anchor="middle">/api/extract (file upload)</text>
+
+    <rect class="bx core" x="422" y="124" width="170" height="76" rx="10"/>
+    <text class="t-b" x="507" y="146" text-anchor="middle">History &amp; Dashboard</text>
+    <text class="t-s" x="507" y="165" text-anchor="middle">/dashboard · /reports</text>
+    <text class="t-s" x="507" y="182" text-anchor="middle">/report/&lt;id&gt; · /pdf</text>
+
+    <rect class="bx core" x="602" y="124" width="170" height="76" rx="10"/>
+    <text class="t-b" x="687" y="146" text-anchor="middle">Focused views</text>
+    <text class="t-s" x="687" y="165" text-anchor="middle">/security · /cost</text>
+    <text class="t-s" x="687" y="182" text-anchor="middle">/storage</text>
+
+    <rect class="bx core" x="782" y="124" width="170" height="76" rx="10"/>
+    <text class="t-b" x="867" y="146" text-anchor="middle">AI endpoints</text>
+    <text class="t-s" x="867" y="165" text-anchor="middle">/assistant · /api/ai/ask</text>
+    <text class="t-s" x="867" y="182" text-anchor="middle">/api/ai/insights/&lt;id&gt;</text>
+  </g>
+
+  <!-- Services -->
+  <rect class="band" x="50" y="232" width="930" height="290" rx="12"/>
+  <text class="t-h" x="64" y="250">SERVICE MODULES · Python</text>
+  <line class="ln" x1="437" y1="212" x2="437" y2="262" marker-end="url(#ar)"/>
+  <text class="t-s" x="448" y="244">calls</text>
+
+  <rect class="bx" x="62" y="262" width="170" height="70" rx="10"/>
+  <text class="t-b" x="147" y="286" text-anchor="middle">pdf_generator.py</text>
+  <text class="t-s" x="147" y="305" text-anchor="middle">ReportLab PDF from</text>
+  <text class="t-s" x="147" y="320" text-anchor="middle">the saved report</text>
+
+  <rect class="bx" x="62" y="346" width="170" height="70" rx="10"/>
+  <text class="t-b" x="147" y="370" text-anchor="middle">requirement_extractor.py</text>
+  <text class="t-s" x="147" y="389" text-anchor="middle">TXT, MD, JSON, CSV, PDF</text>
+  <text class="t-s" x="147" y="404" text-anchor="middle">rule-based parsing</text>
+
+  <rect class="bx" x="62" y="430" width="170" height="70" rx="10"/>
+  <text class="t-b" x="147" y="454" text-anchor="middle">ai_service.py</text>
+  <text class="t-s" x="147" y="473" text-anchor="middle">Gemini insights and chat</text>
+  <text class="t-s" x="147" y="488" text-anchor="middle">rule-based fallbacks</text>
+
+  <rect class="bx core" x="242" y="262" width="390" height="238" rx="10"/>
+  <text class="t-b" x="437" y="286" text-anchor="middle">analysis_engine.py · run_analysis()</text>
+  <g class="t-s">
+    <text x="262" y="314">1  Normalise and validate inputs</text>
+    <text x="262" y="338">2  Resolve prices for all 6 providers</text>
+    <text x="262" y="362">3  Storage + compute + network → cost roll-up</text>
+    <text x="262" y="386">4  Suitability ranking → recommended provider</text>
+    <text x="262" y="410">5  Security posture (13 domains) for that provider</text>
+    <text x="262" y="434">6  Recommendations, assumptions, cost drivers</text>
+    <text x="262" y="458">7  Result (JSON) returned to app.py and saved</text>
+    <text x="262" y="482">   Optional AI explanation added by ai_service</text>
+  </g>
+
+  <rect class="bx" x="672" y="262" width="280" height="74" rx="10"/>
+  <text class="t-b" x="812" y="286" text-anchor="middle">pricing_service.py</text>
+  <text class="t-s" x="812" y="305" text-anchor="middle">live · cached · estimated quotes</text>
+  <text class="t-s" x="812" y="321" text-anchor="middle">24 h cache · timeout · circuit breaker</text>
+  <line class="ln" x1="632" y1="290" x2="672" y2="290" marker-end="url(#ar)"/>
+
+  <rect class="bx" x="672" y="352" width="280" height="60" rx="10"/>
+  <text class="t-b" x="812" y="376" text-anchor="middle">azure_pricing.py</text>
+  <text class="t-s" x="812" y="394" text-anchor="middle">Azure storage + compute fetch</text>
+  <line class="ln" x1="812" y1="336" x2="812" y2="352" marker-end="url(#ar)"/>
+
+  <!-- Data and external -->
+  <rect class="band" x="50" y="544" width="930" height="92" rx="12"/>
+  <text class="t-h" x="64" y="562">DATA AND EXTERNAL SERVICES</text>
+
+  <rect class="bx db" x="62" y="572" width="208" height="56" rx="10"/>
+  <text class="t-b" x="166" y="595" text-anchor="middle">SQLite · SQLAlchemy</text>
+  <text class="t-s" x="166" y="613" text-anchor="middle">users · analyses · chat · contact</text>
+
+  <rect class="bx ext" x="290" y="572" width="190" height="56" rx="10"/>
+  <text class="t-b" x="385" y="595" text-anchor="middle">Google Gemini API</text>
+  <text class="t-s" x="385" y="613" text-anchor="middle">optional · key kept server-side</text>
+
+  <rect class="bx db" x="500" y="572" width="280" height="56" rx="10"/>
+  <text class="t-b" x="640" y="595" text-anchor="middle">Pricing baseline + local cache</text>
+  <text class="t-s" x="640" y="613" text-anchor="middle">pricing_baseline.json · pricing_cache.json</text>
+
+  <rect class="bx ext" x="800" y="572" width="160" height="56" rx="10"/>
+  <text class="t-b" x="880" y="595" text-anchor="middle">Azure Retail Prices</text>
+  <text class="t-s" x="880" y="613" text-anchor="middle">public API · live</text>
+
+  <!-- Connectors to data -->
+  <path class="ln" d="M50 160 H24 V600 H62" marker-end="url(#ar)"/>
+  <text class="t-s" transform="translate(18 380) rotate(-90)" text-anchor="middle">reads / writes (app.py)</text>
+  <path class="ln dash" d="M147 500 V534 H385 V572" marker-end="url(#ar)"/>
+  <path class="ln" d="M672 318 H652 V572" marker-end="url(#ar)"/>
+  <path class="ln dash" d="M830 412 V572" marker-end="url(#ar)"/>
+</svg>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:26px">Analysis pipeline as implemented</h3>
+    <ol class="po-pipe">
+      <li>User input (form or uploaded file)</li><li>Requirement processing</li><li>Price resolution (live / cached / estimate)</li>
+      <li>Storage, compute, network costs</li><li>Cost roll-up per provider</li><li>Multi-cloud suitability ranking</li>
+      <li>Security assessment (recommended provider)</li><li>Recommendations</li><li>Saved to analysis history</li>
+      <li>Report view, PDF, on-demand AI insights</li>
+    </ol>
+    <ul class="dot-list po-notes">{% for n in ps.architecture_notes %}<li>{{ n }}</li>{% endfor %}</ul>
+  </div>
+</section>
+
+<!-- 6. WORKFLOW -->
+<section class="po-sec alt" id="workflow">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">6 · How it works</span><h2>The user workflow</h2>
+      <p>Every step below is supported by the current application.</p></div>
+    <div class="po-steps">
+      {% for s in ps.workflow if s.supported %}
+      <div class="po-step"><div><b>{{ s.title }}</b><span>{{ s.detail }}</span></div></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- C. STATUS -->
+<section class="po-sec" id="status">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">Current project status</span><h2>What is built, and what is verified</h2>
+      <p>A page existing in the interface does not count as completion. A feature is marked “Completed and Verified” only when its backend is implemented and automated tests for it pass.</p></div>
+    <div class="po-legend">
+      {% for g in grouped %}<div><span class="po-b {{ g.key }}">{{ g.label }}</span><br>{{ g.meaning }}</div>{% endfor %}
+    </div>
+    {% for g in grouped if g["items"] %}
+    <div class="po-group">
+      <h3><span class="po-b {{ g.key }}">{{ g.label }}</span> <span class="po-count">{{ g["items"] | length }}</span></h3>
+      <div class="po-feat">
+        {% for f in g["items"] %}
+        <article class="po-fi {{ g.key }}">
+          <header><h4>{{ f.name }}</h4><span class="po-b {{ g.key }}">{{ g.label }}</span></header>
+          <p>{{ f.summary }}</p>
+          <div class="po-cols">
+            <div><h5>Remaining work</h5><ul>{% for r in f.remaining %}<li>{{ r }}</li>{% endfor %}</ul></div>
+            <div><h5>Last verified</h5>
+              <p class="po-ver">{% if f.last_verified %}<b>{{ f.last_verified }}</b>{% else %}<b>Not verified by automated tests</b>{% endif %}<br>{{ f.verification }}</p>
+              {% if f.evidence.tests %}<p class="po-small" style="margin-top:6px">Tests: {{ f.evidence.tests | join(', ') }}</p>{% endif %}</div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- D. PROGRESS -->
+<section class="po-sec alt" id="progress">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">Development progress</span><h2>Progress overview</h2>
+      <p>Figures are computed from the status data using the method described below. They are not estimates of effort.</p></div>
+    <div class="po-kpis">
+      <div class="po-kpi"><span>Modules identified</span><b>{{ S.total }}</b><em>each counted equally</em></div>
+      <div class="po-kpi"><span>Completed and verified</span><b>{{ S.counts.completed_verified }}</b><em>tests pass</em></div>
+      <div class="po-kpi"><span>Need improvement</span><b>{{ S.counts.needs_improvement }}</b><em>working, not yet verified</em></div>
+      <div class="po-kpi"><span>Partially implemented</span><b>{{ S.counts.partial }}</b><em>scope incomplete</em></div>
+      <div class="po-kpi"><span>Under development</span><b>{{ S.counts.under_development }}</b><em>in progress</em></div>
+      <div class="po-kpi"><span>Not yet implemented</span><b>{{ S.counts.not_implemented }}</b><em>no code</em></div>
+    </div>
+    <div class="po-split">
+      <div class="po-card">
+        <h3><i data-lucide="chart-no-axes-column"></i> Module status distribution</h3>
+        <div class="po-bar" role="img" aria-label="Status distribution of {{ S.total }} modules">
+          {% for k in ps.status_order if S.counts[k] %}<i class="{{ k }}" style="width:{{ (100 * S.counts[k] / S.total) | round(1) }}%" title="{{ labels[k].label }}: {{ S.counts[k] }}"></i>{% endfor %}
+        </div>
+        <div class="po-keys">{% for k in ps.status_order %}<span class="{{ k }}"><em>{{ labels[k].label }} ({{ S.counts[k] }})</em></span>{% endfor %}</div>
+        <h3 style="margin-top:22px"><i data-lucide="badge-check"></i> Verified completion: {{ S.verified_pct }}%</h3>
+        <div class="po-meter"><i style="width:{{ S.verified_pct }}%"></i></div>
+        <p class="po-small">{{ ps.progress_method.verified_completion }}</p>
+        <h3 style="margin-top:18px"><i data-lucide="code-xml"></i> Implemented coverage: {{ S.implemented_pct }}%</h3>
+        <div class="po-meter"><i style="width:{{ S.implemented_pct }}%"></i></div>
+        <p class="po-small">{{ ps.progress_method.implemented_coverage }}</p>
+        <p class="po-small" style="margin-top:10px">{{ ps.progress_method.notes }} The project is not complete: no module beyond the {{ S.counts.completed_verified }} verified ones has test evidence.</p>
+      </div>
+      <div class="po-card">
+        <h3><i data-lucide="flag"></i> Current development stage</h3>
+        <p><b>{{ ps.project.stage }}</b></p><p>{{ ps.project.stage_note }}</p>
+        <h3 style="margin-top:20px"><i data-lucide="list-checks"></i> Next priorities</h3>
+        <ol class="po-prio">{% for p in ps.priorities %}<li>{{ p }}</li>{% endfor %}</ol>
+        <h3 style="margin-top:20px"><i data-lucide="flask-conical"></i> Automated tests</h3>
+        <p>{{ tests.functions }} test functions in {{ tests.files }} file{{ '' if tests.files == 1 else 's' }}.
+          Last audit run ({{ ps.audit.date }}): <b>{{ ps.audit.tests_result }}</b>.</p>
+        <p class="po-small">{{ ps.audit.tests_scope }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- E. ROADMAP -->
+<section class="po-sec" id="roadmap">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">Roadmap</span><h2>Development roadmap</h2>
+      <p>{{ roadmap_counts.completed }} completed · {{ roadmap_counts.ongoing }} ongoing · {{ roadmap_counts.pending }} pending.</p></div>
+    <div class="po-card"><div class="po-road">
+      {% for r in ps.roadmap %}
+      <div class="po-ri {{ r.state }}">
+        <div class="po-dot">{% if r.state == 'completed' %}✓{% else %}{{ loop.index }}{% endif %}</div>
+        <div><b>{{ r.name }}</b><span class="n">{{ r.note }}</span></div>
+        <span class="po-b {{ r.state }}">{{ r.state | capitalize }}</span>
+      </div>
+      {% endfor %}
+    </div></div>
+  </div>
+</section>
+
+<!-- F. FUTURE -->
+<section class="po-sec alt" id="future">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">Future enhancements</span><h2>Ideas, not features</h2>
+      <p>Everything in this section is a possible future improvement. None of it is implemented today.</p></div>
+    <ul class="po-grid po-g3 po-future">
+      {% for f in ps.future %}
+      <li class="po-card"><h3><i data-lucide="lightbulb"></i> {{ f.name }}</h3><p>{{ f.detail }}</p><span class="po-b not_implemented">Not implemented</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<!-- G. INFO -->
+<section class="po-sec" id="info">
+  <div class="container">
+    <div class="po-head"><span class="eyebrow">Project information</span><h2>Transparency</h2></div>
+    <div class="po-facts">
+      <div class="po-fact"><span>Project name</span><b>{{ ps.project.name }}</b></div>
+      <div class="po-fact"><span>Category</span><b>{{ ps.project.category }}</b></div>
+      <div class="po-fact"><span>Current stage</span><b>{{ ps.project.stage }}</b></div>
+      <div class="po-fact"><span>Last status update</span><b>{{ ps.last_updated }}</b></div>
+      <div class="po-fact"><span>Technology</span><b>Python · Flask · SQLAlchemy (SQLite) · Jinja2 · Chart.js · ReportLab · Google Gemini</b></div>
+      <div class="po-fact"><span>Cloud providers</span><b>{{ provider_rows | map(attribute='name') | join(', ') }}</b></div>
+      <div class="po-fact" style="grid-column:1/-1"><span>Major modules</span><b>{{ ps.modules_overview | map(attribute='name') | join(' · ') }}</b></div>
+    </div>
+    <div class="notice po-note"><i data-lucide="shield-check"></i>
+      <div>This page shows status information only. It does not display API keys, credentials, user data, or source code.
+        The status is maintained by hand from <code>data/project_status.json</code> after verified changes; the website does not detect code completion automatically.</div></div>
+    <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
+      {% if current_user.is_authenticated %}
+        <a class="btn btn-primary" href="{{ url_for('analysis') }}">Start a cloud analysis <i data-lucide="arrow-right"></i></a>
+        <a class="btn btn-outline" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+      {% else %}
+        <a class="btn btn-primary" href="{{ url_for('login_route') }}">Log in or register <i data-lucide="arrow-right"></i></a>
+        <a class="btn btn-outline" href="{{ url_for('index') }}">Back to home</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <span class="brand"><span class="brand-mark small"><i data-lucide="cloud-cog"></i></span> CloudInsight AI</span>
+    <span>© {{ year }} CloudInsight AI — {{ tagline }}</span>
+  </div>
+</footer>
+{% endblock %}

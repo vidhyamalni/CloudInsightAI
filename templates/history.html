@@ -1,0 +1,60 @@
+{% extends 'dash_base.html' %}
+{% block pagetitle %}Analysis History{% endblock %}
+{% block pagesub %}Every analysis and report you have generated, newest first{% endblock %}
+{% block content %}
+{% if not rows %}
+  {% include 'empty_state.html' %}
+{% else %}
+<div class="card-panel">
+  <div class="panel-head">
+    <h3 class="sub-heading tight">{{ rows | length }} analys{{ 'is' if rows | length == 1 else 'es' }}</h3>
+    <input class="table-filter" id="historyFilter" type="search" placeholder="Filter by company, year or month…" aria-label="Filter history">
+  </div>
+  <div class="table-scroll">
+  <table class="data-table history-table" id="historyTable">
+    <thead><tr><th>Company</th><th>Report</th><th>Analysis date</th><th>Month</th><th>Year</th><th>Time</th><th>Status</th><th>Report</th><th></th></tr></thead>
+    <tbody>
+    {% for x in rows %}
+      {% set iso = x.created_at | utc_iso %}
+      <tr class="h-row">
+        <td><b>{{ x.company_name }}</b></td>
+        <td class="cell-note">{{ x.title }}<br><small>Recommended: {{ x.provider }}</small></td>
+        <td><time class="js-local" data-fmt="date" data-utc="{{ iso }}">{{ x.created_at | d_date }}</time></td>
+        <td><time class="js-local" data-fmt="month" data-utc="{{ iso }}">{{ x.created_at.strftime('%B') }}</time></td>
+        <td><time class="js-local" data-fmt="year" data-utc="{{ iso }}">{{ x.created_at.strftime('%Y') }}</time></td>
+        <td><time class="js-local" data-fmt="time" data-utc="{{ iso }}">{{ x.created_at | d_time }} UTC</time></td>
+        <td><span class="badge {{ 'badge-ok' if x.has_report else 'badge-review' }}">{{ x.status }}</span></td>
+        <td>{% if x.has_report %}<span class="badge badge-blue">Available</span>{% else %}<span class="badge badge-review">Unavailable</span>{% endif %}</td>
+        <td class="cell-actions">
+          {% if x.has_report %}<a class="btn btn-small" href="{{ url_for('report', rid=x.id) }}">Open</a>
+          <a class="btn btn-small btn-outline" href="{{ url_for('report_pdf', rid=x.id) }}">Download</a>{% endif %}
+          <button type="button" class="btn btn-small btn-outline js-details" aria-expanded="false">Details</button>
+        </td>
+      </tr>
+      <tr class="h-detail" hidden>
+        <td colspan="9">
+          <div class="facts-grid">
+            <div class="fact"><span>Analysis ID</span><b>#{{ x.id }}</b></div>
+            <div class="fact"><span>Generated</span><b><time class="js-local" data-fmt="full" data-utc="{{ iso }}">{{ x.created_at | d_date }}, {{ x.created_at | d_time }} UTC</time></b></div>
+            <div class="fact"><span>Industry</span><b>{{ x.industry or '—' }}</b></div>
+            <div class="fact"><span>Region</span><b>{{ x.region or '—' }}</b></div>
+            <div class="fact"><span>Monthly budget</span><b>{{ x.monthly_budget | money if x.monthly_budget else '—' }}</b></div>
+            <div class="fact"><span>Storage</span><b>{{ '{:,}'.format(x.storage_gb or 0) }} GB</b></div>
+            <div class="fact"><span>Expected users</span><b>{{ '{:,}'.format(x.expected_users or 0) }}</b></div>
+            <div class="fact"><span>Compute</span><b>{{ x.compute_req or '—' }}</b></div>
+            <div class="fact"><span>Data sensitivity</span><b>{{ x.data_sensitivity or '—' }}</b></div>
+            <div class="fact"><span>Availability</span><b>{{ x.availability_req or '—' }}</b></div>
+            <div class="fact"><span>Compliance</span><b>{{ x.compliance_req or '—' }}</b></div>
+            <div class="fact"><span>AI insights</span><b>{{ 'Generated' if x.ai_insights else 'Not generated' }}</b></div>
+          </div>
+          <p class="source-line">Inputs only. Open the report for the full cost, storage, compute and security results.</p>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="cell-empty" id="historyEmpty" hidden>No analyses match that filter.</p>
+</div>
+{% endif %}
+{% endblock %}

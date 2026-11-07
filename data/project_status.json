@@ -1,0 +1,774 @@
+{
+  "_readme": "Maintained status data for the Project Overview page (/project-overview). The website does NOT detect code completion automatically. Edit this file only after a verified change: re-run `python -m unittest discover -s tests`, then update 'status', 'last_verified' and 'verification' for the affected feature. tests/test_project_status.py checks that this file stays consistent (valid statuses, existing evidence files, cited test IDs that really exist).",
+  "schema_version": 1,
+  "last_updated": "2026-11-07",
+  "audit": {
+    "date": "2026-11-07",
+    "scope": "Source review of every Python module, template, and data file in the project archive, plus a run of the automated test suite.",
+    "tests_run": "python -m unittest discover -s tests",
+    "tests_result": "40 tests, all passed (28 pricing, rendering and PDF tests plus 12 status-data checks)",
+    "tests_scope": "Automated tests cover pricing, cost and storage formulas, cache and fallback behaviour, template rendering, PDF generation, and the consistency of this status data. No tests exist yet for authentication, security scoring, suitability ranking, AI, file extraction, or routes."
+  },
+  "project": {
+    "name": "CloudInsightAI",
+    "category": "Web application: cloud analytics and decision-support platform (security, risk, and cost)",
+    "tagline": "AI-Powered Cloud Security, Risk & Cost Analytics Platform",
+    "purpose": "Help a company describe its cloud requirements once and receive an automatic comparison of six cloud providers, a recommended provider, a simulated security assessment, estimated costs, storage analysis, AI-assisted explanations, and a downloadable PDF report.",
+    "stage": "Technical audit and stabilization",
+    "stage_note": "All core modules exist in code. Only three are verified by automated tests. Current effort is pricing accuracy and test coverage."
+  },
+  "status_order": [
+    "completed_verified",
+    "needs_improvement",
+    "partial",
+    "under_development",
+    "not_implemented"
+  ],
+  "status_labels": {
+    "completed_verified": {
+      "label": "Completed and Verified",
+      "meaning": "Backend logic is implemented AND covered by automated tests that pass. Remaining work, if any, is outside the tested scope."
+    },
+    "needs_improvement": {
+      "label": "Implemented but Needs Improvement",
+      "meaning": "Works end to end in the code, but has no automated tests and/or has known accuracy or hardening gaps."
+    },
+    "partial": {
+      "label": "Partially Implemented",
+      "meaning": "Only part of the intended scope is built."
+    },
+    "under_development": {
+      "label": "Under Development",
+      "meaning": "Active work in progress; the feature is not yet confirmed to work against real external services."
+    },
+    "not_implemented": {
+      "label": "Not Yet Implemented",
+      "meaning": "No working implementation exists in the code."
+    }
+  },
+  "progress_method": {
+    "verified_completion": "Modules with status 'Completed and Verified' divided by total modules identified.",
+    "implemented_coverage": "Modules with status 'Completed and Verified' or 'Implemented but Needs Improvement' divided by total modules identified. This measures how much code exists and runs, not how much is verified.",
+    "notes": "Every module counts equally. Percentages are computed from this file when the page loads and are not typed in by hand. They are rounded to whole numbers."
+  },
+  "features": [
+    {
+      "id": "f_cost",
+      "name": "Cost Analysis (calculation engine)",
+      "status": "completed_verified",
+      "summary": "Per-provider monthly and annual cost = storage + compute + outbound network egress, with each price labelled live, cached, or estimated and the assumptions shown in every report.",
+      "remaining": [
+        "Extend to disks, load balancers, databases, support plans, reserved or committed pricing (not modelled today)."
+      ],
+      "last_verified": "2026-11-07",
+      "verification": "28 automated tests pass (formula, provenance, and rendering tests C03-C11, C26).",
+      "evidence": {
+        "code": [
+          "analysis_engine.py",
+          "templates/partials/_cost.html",
+          "templates/cost.html"
+        ],
+        "tests": [
+          "C03",
+          "C04",
+          "C07",
+          "C08",
+          "C10",
+          "C11",
+          "C26"
+        ]
+      }
+    },
+    {
+      "id": "f_storage",
+      "name": "Storage Analysis",
+      "status": "completed_verified",
+      "summary": "Billed storage = required GB x a retained-copies factor tied to data sensitivity (1.0 to 1.6), priced at each provider's per-GB rate, with the provider's storage service, encryption, backup, and retention shown.",
+      "remaining": [
+        "Model storage tiers and lifecycle policies (hot/cool/archive).",
+        "Model request and operation charges."
+      ],
+      "last_verified": "2026-11-07",
+      "verification": "Formula and rendering covered by automated tests C05, C06, C26 (all pass).",
+      "evidence": {
+        "code": [
+          "analysis_engine.py",
+          "templates/partials/_storage.html",
+          "templates/storage.html"
+        ],
+        "tests": [
+          "C05",
+          "C06",
+          "C26"
+        ]
+      }
+    },
+    {
+      "id": "f_pdf",
+      "name": "PDF Report Generation",
+      "status": "completed_verified",
+      "summary": "Builds a downloadable PDF of any saved report with ReportLab, including reports saved before the pricing-provenance fields existed.",
+      "remaining": [
+        "Add the on-screen charts to the PDF (not included today)."
+      ],
+      "last_verified": "2026-11-07",
+      "verification": "Test C28 builds and re-reads PDFs for new and old reports (passes).",
+      "evidence": {
+        "code": [
+          "pdf_generator.py",
+          "app.py"
+        ],
+        "tests": [
+          "C28",
+          "C27"
+        ]
+      }
+    },
+    {
+      "id": "f_analysis",
+      "name": "Cloud Analysis (input form and orchestration)",
+      "status": "needs_improvement",
+      "summary": "Form (company, industry, region, budget, storage, users, workload, sensitivity, availability, compliance) with optional requirements-file upload. Runs the engine for all six providers, saves the result, and opens the report.",
+      "remaining": [
+        "Add route-level tests (valid, invalid, and empty input).",
+        "Stronger input validation and error messages.",
+        "Security hardening of form handling and file uploads."
+      ],
+      "last_verified": null,
+      "verification": "Engine path is exercised by pricing tests; the route and form handling have no automated tests. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "app.py",
+          "analysis_engine.py",
+          "templates/analysis.html"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_extract",
+      "name": "Requirement Extraction from Uploaded Files",
+      "status": "needs_improvement",
+      "summary": "Reads TXT, MD, JSON, CSV, or PDF (max 2 MB) and extracts requirements with Gemini, falling back to a keyword/rule-based parser when AI is unavailable.",
+      "remaining": [
+        "Add tests for each file type and for both extraction paths.",
+        "Report to the user which fields were guessed."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "requirement_extractor.py",
+          "ai_service.py"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_comparison",
+      "name": "Multi-Cloud Comparison and Provider Suitability",
+      "status": "needs_improvement",
+      "summary": "Scores all six providers on nine weighted dimensions (weights adapt to the stated requirements), ranks them, and recommends one. Rendering is tested; the scoring logic is not.",
+      "remaining": [
+        "Unit-test the weighting and ranking logic.",
+        "Replace fixed capability baselines with documented, dated sources.",
+        "Show sensitivity of the winner to the weights."
+      ],
+      "last_verified": null,
+      "verification": "Templates render in test C26; scoring logic has no tests. Capability scores are configured baselines, not measurements. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "analysis_engine.py",
+          "templates/partials/_suitability.html",
+          "templates/partials/_comparison.html"
+        ],
+        "tests": [
+          "C26"
+        ]
+      }
+    },
+    {
+      "id": "f_security",
+      "name": "Security Analysis",
+      "status": "needs_improvement",
+      "summary": "Rule-based assessment of 13 security domains for the recommended provider, producing a score, risk level, and risk register. It is a simulation driven by the questionnaire answers and is labelled as such.",
+      "remaining": [
+        "Unit-test the scoring rules.",
+        "Document the scoring rationale and thresholds.",
+        "Use real configuration data once account integration exists (see Live Cloud Account Integration)."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests. Output is labelled 'simulated configuration-based analysis'. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "analysis_engine.py",
+          "templates/partials/_security.html",
+          "templates/partials/_risks.html",
+          "templates/security.html"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_ai",
+      "name": "AI Assistant and AI Analytics",
+      "status": "needs_improvement",
+      "summary": "Google Gemini produces report insights (cached with the report), answers questions grounded in the latest report, explains the recommended provider, and extracts requirements. Rule-based fallbacks answer when AI is unavailable.",
+      "remaining": [
+        "Give the assistant conversation memory across turns.",
+        "Add tests using a mocked AI client.",
+        "Review model selection and error reporting.",
+        "Add usage limits."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests; AI behaviour has not been verified in this audit. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "ai_service.py",
+          "app.py",
+          "templates/assistant.html"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_dashboard",
+      "name": "Dashboard",
+      "status": "needs_improvement",
+      "summary": "Charts for the selected report (cost by provider, security score, storage breakdown, comparison radar, suitability ranking) plus cost and security-score trends across the user's saved analyses.",
+      "remaining": [
+        "Add route and data tests.",
+        "Test with zero, one, and many reports.",
+        "Review chart accessibility and mobile layout."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "app.py",
+          "templates/dashboard.html",
+          "static/js/charts.js"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_history",
+      "name": "Analysis History",
+      "status": "needs_improvement",
+      "summary": "Every analysis is stored in the database with its full result and listed under Reports (view or download PDF). Reports are private to their owner.",
+      "remaining": [
+        "Test persistence and the owner-only access rule.",
+        "Verify the database schema and relationships.",
+        "Add delete and search.",
+        "Plan database migrations."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "models.py",
+          "app.py",
+          "templates/reports.html"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_auth",
+      "name": "User Authentication",
+      "status": "needs_improvement",
+      "summary": "Registration and login with hashed passwords, minimum password length, and a temporary lock after repeated failed logins. Sessions are handled by Flask-Login.",
+      "remaining": [
+        "Add automated authentication tests.",
+        "Password reset and email verification.",
+        "Security hardening and a security test pass before public deployment."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "app.py",
+          "models.py",
+          "templates/login.html"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_pricing",
+      "name": "Cloud Pricing Data and Live Pricing",
+      "status": "under_development",
+      "summary": "A pricing service resolves every price as live, cached, or estimated. Live fetching exists for Azure only (storage and compute, from the Azure Retail Prices API). The other five providers, and Azure egress, use stored estimates that are not yet verified against provider price lists.",
+      "remaining": [
+        "Run tests/live_azure_check.py against the real Azure API and confirm the parser.",
+        "Verify the stored estimates against each provider's price list and record the review date.",
+        "Add live fetchers for the other five providers.",
+        "Add region-specific prices for non-Azure providers."
+      ],
+      "last_verified": null,
+      "verification": "Cache, fallback, timeout, and plausibility logic pass mocked tests C12-C25 (2026-11-07). The live Azure parser has not been confirmed against the real service, and no baseline entry is marked verified.",
+      "evidence": {
+        "code": [
+          "pricing_service.py",
+          "azure_pricing.py",
+          "data/pricing_baseline.json",
+          "tests/live_azure_check.py"
+        ],
+        "tests": [
+          "C01",
+          "C03",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C17",
+          "C18",
+          "C19",
+          "C20",
+          "C21",
+          "C22",
+          "C23",
+          "C24",
+          "C25"
+        ]
+      }
+    },
+    {
+      "id": "f_profile",
+      "name": "User Profile",
+      "status": "partial",
+      "summary": "A read-only account page showing name, email, member-since date, report count, and a summary of account protections.",
+      "remaining": [
+        "Edit name and email.",
+        "Change password.",
+        "Delete account and data."
+      ],
+      "last_verified": null,
+      "verification": "No automated tests. Code reviewed 2026-11-07.",
+      "evidence": {
+        "code": [
+          "app.py",
+          "templates/profile.html"
+        ],
+        "tests": []
+      }
+    },
+    {
+      "id": "f_integration",
+      "name": "Live Cloud Account Integration",
+      "status": "not_implemented",
+      "summary": "The platform does not connect to real cloud accounts. Security and cost analysis use questionnaire answers and configured estimates, not data read from a customer's environment.",
+      "remaining": [
+        "Design read-only credential handling.",
+        "Real configuration scanning.",
+        "Actual-spend import."
+      ],
+      "last_verified": null,
+      "verification": "No code exists. The security report states that it is a simulation.",
+      "evidence": {
+        "code": [],
+        "tests": []
+      }
+    }
+  ],
+  "priorities": [
+    "Confirm the live Azure price parser against the real API, then verify and date the stored estimates for the other five providers.",
+    "Add automated tests for authentication, security scoring, suitability ranking, extraction, the AI fallbacks, and the report routes.",
+    "Complete a security-hardening pass and a security test pass before any public deployment.",
+    "Verify database persistence and relationships with tests, then plan migrations.",
+    "Prepare the repository, deployment configuration, and final documentation."
+  ],
+  "roadmap": [
+    {
+      "name": "Core Application Development",
+      "state": "completed",
+      "note": "All planned core modules exist in code."
+    },
+    {
+      "name": "Technical Audit and Bug Fixing",
+      "state": "ongoing",
+      "note": "Source audit done 2026-11-07; findings are being worked through."
+    },
+    {
+      "name": "Cloud Pricing Accuracy Improvements",
+      "state": "ongoing",
+      "note": "Live Azure pricing and the provenance system are built; real-API confirmation and baseline verification remain."
+    },
+    {
+      "name": "Security Assessment Improvements",
+      "state": "pending",
+      "note": "Scoring rules need tests and documented rationale."
+    },
+    {
+      "name": "Database and Data Persistence Verification",
+      "state": "pending",
+      "note": "No persistence tests yet."
+    },
+    {
+      "name": "AI Assistant Improvements",
+      "state": "pending",
+      "note": "Conversation memory, mocked tests, usage limits."
+    },
+    {
+      "name": "User Interface Improvements",
+      "state": "pending",
+      "note": "Mobile and accessibility review."
+    },
+    {
+      "name": "Functional and Security Testing",
+      "state": "ongoing",
+      "note": "40 tests exist, covering pricing, rendering, PDF, and status data only; no functional or security tests for the application routes yet."
+    },
+    {
+      "name": "GitHub Repository Setup",
+      "state": "pending",
+      "note": "No repository configuration was present in the audited archive."
+    },
+    {
+      "name": "Public Website Deployment",
+      "state": "pending",
+      "note": "No deployment configuration exists yet."
+    },
+    {
+      "name": "Final Documentation and Project Submission",
+      "state": "pending",
+      "note": "No README or user guide was present in the audited archive."
+    },
+    {
+      "name": "Future Enhancements",
+      "state": "pending",
+      "note": "See the ideas listed below; none are implemented."
+    }
+  ],
+  "future": [
+    {
+      "name": "More cloud provider integrations",
+      "detail": "Live price feeds for AWS, Google Cloud, IBM, Oracle, and Tencent, and additional providers."
+    },
+    {
+      "name": "Advanced cloud cost optimization",
+      "detail": "Reserved and committed-use pricing, right-sizing, storage tier modelling."
+    },
+    {
+      "name": "Real cloud account integration",
+      "detail": "Read-only connection to customer accounts for actual configuration and spend."
+    },
+    {
+      "name": "Automated security configuration assessment",
+      "detail": "Replace the questionnaire-driven simulation with real configuration checks."
+    },
+    {
+      "name": "Advanced AI recommendations",
+      "detail": "Deeper, evidence-linked recommendations with conversation memory."
+    },
+    {
+      "name": "Cloud resource monitoring",
+      "detail": "Ongoing monitoring and alerting."
+    },
+    {
+      "name": "Historical cost trend analysis",
+      "detail": "Price history by provider over time, beyond the user's own report trend."
+    },
+    {
+      "name": "Advanced reporting",
+      "detail": "Charts in the PDF, scheduled reports, comparison between two reports."
+    },
+    {
+      "name": "Enterprise-level user management",
+      "detail": "Teams, roles, and shared workspaces."
+    }
+  ],
+  "about": {
+    "what": "CloudInsightAI is a web application that takes a company's cloud requirements and, in one run, evaluates six cloud providers, recommends the most suitable one, and produces a report covering costs, storage, and a simulated security assessment.",
+    "why": "Choosing a cloud provider means weighing cost, security, compliance, and availability across providers whose pricing models differ. The platform puts those comparisons in one place and states the assumptions behind every figure.",
+    "problem": "It reduces the manual effort of comparing providers side by side and makes the basis of each estimate visible, including whether a price is live, cached, or an unverified estimate.",
+    "who": "Anyone who registers: students, small teams, and companies planning a cloud move who want a first-pass comparison. It is a planning aid, not a billing tool or a security scanner.",
+    "objectives": [
+      "Evaluate all six providers automatically from one description of requirements.",
+      "Recommend a provider and explain why.",
+      "Estimate monthly and annual costs with visible assumptions.",
+      "Highlight security and compliance gaps for the chosen provider.",
+      "Keep a private history of analyses and export PDF reports."
+    ]
+  },
+  "modules_overview": [
+    {
+      "name": "Dashboard",
+      "icon": "layout-dashboard",
+      "status_refs": [
+        "f_dashboard"
+      ],
+      "purpose": "A visual summary of an analysis.",
+      "how": "Shows the selected report (latest by default): cost by provider, security score, storage breakdown, a comparison radar, and the suitability ranking, plus cost and security-score trends across the user's saved analyses."
+    },
+    {
+      "name": "Cloud Analysis",
+      "icon": "cloud",
+      "status_refs": [
+        "f_analysis",
+        "f_extract"
+      ],
+      "purpose": "Collect requirements and run the analysis.",
+      "how": "A form for company details, region, budget, storage, users, workload, data sensitivity, availability, and compliance, with optional upload of a requirements file (TXT, MD, JSON, CSV, PDF up to 2 MB). The engine evaluates all six providers and the result is saved."
+    },
+    {
+      "name": "Multi-Cloud Comparison",
+      "icon": "git-compare",
+      "status_refs": [
+        "f_comparison"
+      ],
+      "purpose": "Compare providers and recommend one.",
+      "how": "Scores each provider on nine dimensions (compute, storage, database, networking, security, scalability, availability, cost, compliance) with weights that adapt to the stated requirements, then ranks them and explains the winner."
+    },
+    {
+      "name": "Security Analysis",
+      "icon": "shield-check",
+      "status_refs": [
+        "f_security"
+      ],
+      "purpose": "Show likely security and compliance gaps.",
+      "how": "A rule-based assessment of 13 domains for the recommended provider (for example IAM, MFA, encryption, logging, backup, compliance), giving each a status of ok, review, or gap, an overall score, and a risk register. It is labelled a simulation, not a live scan."
+    },
+    {
+      "name": "Cost Analysis",
+      "icon": "circle-dollar-sign",
+      "status_refs": [
+        "f_cost",
+        "f_pricing"
+      ],
+      "purpose": "Estimate what the environment would cost.",
+      "how": "Monthly cost is storage + compute (instances x hourly rate x 730 hours) + outbound egress (users x 0.25 GB x rate). Each price shows its source and whether it is live, cached, or estimated. Budget utilisation and cost drivers are included."
+    },
+    {
+      "name": "Storage Analysis",
+      "icon": "hard-drive",
+      "status_refs": [
+        "f_storage"
+      ],
+      "purpose": "Size and price storage per provider.",
+      "how": "Required GB is multiplied by a retained-copies factor based on data sensitivity, priced per provider, and shown with each provider's storage service, encryption, backup approach, and retention period."
+    },
+    {
+      "name": "AI Assistant / AI Analytics",
+      "icon": "bot",
+      "status_refs": [
+        "f_ai"
+      ],
+      "purpose": "Explain the report in plain language.",
+      "how": "Uses Google Gemini for report insights, question answering grounded in the latest report, a provider-recommendation explanation, and requirement extraction. When no AI key is configured or a call fails, rule-based fallbacks respond instead."
+    },
+    {
+      "name": "Analysis History",
+      "icon": "history",
+      "status_refs": [
+        "f_history"
+      ],
+      "purpose": "Keep every analysis available later.",
+      "how": "Each analysis is stored with its full result. The Reports page lists them with view and PDF links; a report is visible only to the account that created it."
+    },
+    {
+      "name": "PDF Report Generation",
+      "icon": "file-text",
+      "status_refs": [
+        "f_pdf"
+      ],
+      "purpose": "Produce a shareable report.",
+      "how": "Builds a PDF of a saved report on request using ReportLab, including reports saved by earlier versions of the app."
+    },
+    {
+      "name": "User Authentication and Profile",
+      "icon": "user",
+      "status_refs": [
+        "f_auth",
+        "f_profile"
+      ],
+      "purpose": "Keep each user's analyses private.",
+      "how": "Email and password registration and login with hashed passwords and a temporary lock after repeated failures. The profile page shows account details and the number of reports."
+    }
+  ],
+  "workflow": [
+    {
+      "title": "Register or log in",
+      "detail": "Create an account (name, email, password of 8+ characters) or sign in.",
+      "supported": true
+    },
+    {
+      "title": "Enter company requirements",
+      "detail": "Fill in the form, optionally uploading a requirements file that the app reads to pre-fill fields.",
+      "supported": true
+    },
+    {
+      "title": "Requirements are processed",
+      "detail": "Uploaded text is parsed by Gemini or a rule-based parser; values are normalised and defaults applied.",
+      "supported": true
+    },
+    {
+      "title": "Providers are evaluated",
+      "detail": "All six providers are priced and scored automatically; the most suitable is recommended.",
+      "supported": true
+    },
+    {
+      "title": "Security is assessed",
+      "detail": "A 13-domain rule-based assessment runs for the recommended provider (simulation).",
+      "supported": true
+    },
+    {
+      "title": "Costs are estimated",
+      "detail": "Storage, compute, and egress costs are combined per provider with price provenance shown.",
+      "supported": true
+    },
+    {
+      "title": "Storage is analysed",
+      "detail": "Billed storage and per-provider storage services, encryption, and retention are calculated.",
+      "supported": true
+    },
+    {
+      "title": "AI adds explanations",
+      "detail": "Gemini explains the recommendation, and insights and chat are available on demand; fallbacks apply when AI is unavailable.",
+      "supported": true
+    },
+    {
+      "title": "A detailed report is generated",
+      "detail": "An on-screen report is shown and a PDF can be downloaded.",
+      "supported": true
+    },
+    {
+      "title": "The report is saved to history",
+      "detail": "The full result is stored in the database when the analysis completes and appears under Reports.",
+      "supported": true
+    }
+  ],
+  "stack": [
+    {
+      "layer": "Language and backend",
+      "icon": "server",
+      "items": [
+        {
+          "name": "Python",
+          "detail": "Application language"
+        },
+        {
+          "name": "Flask 3",
+          "detail": "Web framework and routing"
+        },
+        {
+          "name": "Jinja2",
+          "detail": "Server-side HTML templates"
+        },
+        {
+          "name": "Werkzeug",
+          "detail": "Password hashing"
+        }
+      ]
+    },
+    {
+      "layer": "Database",
+      "icon": "database",
+      "items": [
+        {
+          "name": "SQLite (default)",
+          "detail": "Via Flask-SQLAlchemy; the database URL can be overridden with DATABASE_URL"
+        },
+        {
+          "name": "Flask-SQLAlchemy",
+          "detail": "Models: users, analyses, chat messages, contact messages"
+        },
+        {
+          "name": "Flask-Login",
+          "detail": "Session-based authentication"
+        }
+      ]
+    },
+    {
+      "layer": "Frontend",
+      "icon": "layout-template",
+      "items": [
+        {
+          "name": "HTML, CSS, JavaScript",
+          "detail": "Hand-written stylesheet and vanilla JS; no frontend framework"
+        },
+        {
+          "name": "Chart.js 4.4.1",
+          "detail": "Charts (loaded from a CDN)"
+        },
+        {
+          "name": "Lucide icons",
+          "detail": "Icon set (loaded from a CDN)"
+        },
+        {
+          "name": "Google Fonts",
+          "detail": "Sora and Manrope"
+        }
+      ]
+    },
+    {
+      "layer": "AI integration",
+      "icon": "sparkles",
+      "items": [
+        {
+          "name": "Google Gemini (google-genai SDK)",
+          "detail": "Insights, chat answers, recommendation explanation, requirement extraction; models are tried from a candidate list"
+        }
+      ]
+    },
+    {
+      "layer": "Pricing data",
+      "icon": "circle-dollar-sign",
+      "items": [
+        {
+          "name": "Azure Retail Prices API",
+          "detail": "Live Azure storage and compute prices (public, no key), called with the Python standard library"
+        },
+        {
+          "name": "Stored baseline estimates",
+          "detail": "data/pricing_baseline.json for all other prices"
+        },
+        {
+          "name": "Local JSON cache",
+          "detail": "24-hour cache with a 5-minute circuit breaker after failures"
+        }
+      ]
+    },
+    {
+      "layer": "Reports and files",
+      "icon": "file-text",
+      "items": [
+        {
+          "name": "ReportLab",
+          "detail": "PDF generation"
+        },
+        {
+          "name": "pypdf",
+          "detail": "Reading uploaded PDF requirement files"
+        }
+      ]
+    },
+    {
+      "layer": "Development and testing",
+      "icon": "flask-conical",
+      "items": [
+        {
+          "name": "unittest",
+          "detail": "Automated tests in tests/"
+        }
+      ]
+    },
+    {
+      "layer": "Deployment",
+      "icon": "rocket",
+      "items": [
+        {
+          "name": "Not configured",
+          "detail": "No deployment files were present in the audited archive; the app currently runs with the Flask development server"
+        }
+      ]
+    }
+  ],
+  "architecture_notes": [
+    "The analysis engine prices and costs every provider first, then uses those costs in the suitability ranking, then runs the security assessment for the winning provider. This order is implemented in analysis_engine.run_analysis.",
+    "Results are stored as JSON in the analyses table, so reports, the dashboard, and the PDF are all produced from the saved result rather than recalculated.",
+    "AI insights are generated on demand and cached on the report; the assistant answers from the latest report."
+  ]
+}

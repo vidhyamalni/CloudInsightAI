@@ -1,25 +1,30 @@
 """CloudInsight AI — application entry point.
 Automatic multi-provider analysis: no provider selection — all six providers are
 evaluated and the most suitable one is recommended from the company's details."""
-import os, json
+import os, json, time
 from io import BytesIO
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, jsonify, send_file, abort)
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from sqlalchemy import func, text
+from sqlalchemy.orm import defer
 from models import db, User, Analysis, ChatMessage, ContactMessage
 import analysis_engine as engine
 import ai_service as ai
 import requirement_extractor as extractor
+import ui_filters
+import security
 from pdf_generator import build_pdf
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-change-me-in-production")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///cloudinsight.db")
+app.config["SECRET_KEY"] = security.load_secret_key(app.instance_path)     # env SECRET_KEY, else a random key stored in instance/
+app.config["SQLALCHEMY_DATABASE_URI"] = security.normalize_db_url(os.environ.get("DATABASE_URL", "sqlite:///cloudinsight.db"))
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 db.init_app(app)
+security.init_security(app)          # CSRF, hardened cookies, security headers
 
 login = LoginManager(app)
 login.login_view = "login_route"
@@ -46,6 +51,9 @@ def money(v):
         return f"${float(v):,.2f}"
     except (TypeError, ValueError):
         return "—"
+
+
+ui_filters.register(app)
 
 
 def _chart_data(d):
@@ -94,7 +102,8 @@ def index():
 def contact():
     data = request.get_json(silent=True) or request.form
     if data.get("message") and data.get("email"):
-        db.session.add(ContactMessage(name=data.get("name", ""), email=data["email"], message=data["message"]))
+        db.session.add(ContactMessage(name=str(data.get("name", ""))[:120], email=str(data["email"])[:255],
+                                      message=str(data["message"])[:2000]))
         db.session.commit()
     if request.is_json:
         return jsonify(ok=True)
@@ -123,7 +132,8 @@ def login_route():
                 u.set_password(password)
                 db.session.add(u); db.session.commit()
                 login_user(u)
-                return redirect(request.args.get("next") or url_for("dashboard"))
+                nxt = request.args.get("next")
+                return redirect(nxt if security.is_safe_next(nxt) else url_for("dashboard"))
         else:
             u = User.query.filter_by(email=email).first()
             if u and u.is_locked:
@@ -134,9 +144,7 @@ def login_route():
                 db.session.commit()
                 login_user(u)
                 nxt = request.args.get("next")
-                if nxt and urlparse(nxt).netloc == "":
-                    return redirect(nxt)
-                return redirect(url_for("dashboard"))
+                return redirect(nxt if security.is_safe_next(nxt) else url_for("dashboard"))
             else:
                 if u:
                     u.failed_attempts += 1
@@ -148,7 +156,7 @@ def login_route():
     return render_template("login.html")
 
 
-@app.get("/logout")
+@app.post("/logout")
 @login_required
 def logout():
     logout_user()
@@ -175,10 +183,51 @@ def api_extract():
 
 # ---------------- Cloud analysis ----------------
 
+# Security / Cost / Storage pages are analysis *interfaces*: they open the form (no old results),
+# and after a new analysis they jump to the matching section of the newly saved report.
+FOCUS_PAGES = {
+    "security": dict(page_title="Security Analysis", page_sub="Describe your environment to assess its security posture (simulated configuration analysis)",
+                     anchor="sec-7", button="Run Security Analysis",
+                     busy="Running Security Analysis...", done="Security analysis completed successfully"),
+    "cost": dict(page_title="Cost Analysis", page_sub="Describe your environment to estimate monthly and annual cloud cost",
+                 anchor="sec-6", button="Estimate Cloud Cost",
+                 busy="Estimating Cloud Cost...", done="Cost estimation completed successfully"),
+    "storage": dict(page_title="Storage Analysis", page_sub="Describe your data to compare storage services and storage cost",
+                    anchor="sec-4", button="Run Storage Analysis",
+                    busy="Running Storage Analysis...", done="Storage analysis completed successfully"),
+}
+
+
+def _company_profiles():
+    """Previously used company details (latest per company) so a form can be pre-filled.
+    Reads input columns only - never the stored analysis results."""
+    seen, out = set(), []
+    rows = (current_user.analyses.options(defer(Analysis.result_json), defer(Analysis.ai_insights))
+            .order_by(Analysis.created_at.desc(), Analysis.id.desc()).all())
+    for a in rows:
+        key = (a.company_name or "").strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(dict(id=a.id, company_name=a.company_name, industry=a.industry, region=a.region,
+                        monthly_budget=a.monthly_budget, storage_gb=a.storage_gb, expected_users=a.expected_users,
+                        compute_req=a.compute_req, data_sensitivity=a.data_sensitivity,
+                        availability=a.availability_req, compliance=a.compliance_req))
+    return out
+
+
+def _analysis_form_page(focus=None, values=None):
+    meta = FOCUS_PAGES.get(focus, {})
+    return render_template("analysis.html", focus=focus if focus in FOCUS_PAGES else None,
+                           profiles=_company_profiles(), form_values=values or {}, **meta)
+
+
 @app.route("/analysis", methods=["GET", "POST"])
 @login_required
 def analysis():
     if request.method == "POST":
+        t0 = time.perf_counter()
+        focus = request.form.get("focus")
         form = dict(request.form)
         meta = dict(source="form", file_name=None, fields_from_file=[])
         file = request.files.get("company_file")
@@ -192,11 +241,20 @@ def analysis():
                 flash(f"Uploaded file skipped: {e}", "error")
             except Exception:
                 flash("Uploaded file could not be read — using the form values only.", "error")
-        d = engine.run_analysis(form, extraction_meta=meta)
+        clean, err = security.validate_analysis_form(form)
+        if err:
+            flash(err, "error")
+            return _analysis_form_page(focus, {k: v for k, v in request.form.items() if k != "csrf_token"})
+        try:
+            d = engine.run_analysis(clean, extraction_meta=meta)
+        except (ValueError, TypeError):
+            flash("Please enter valid numbers for budget, storage and users.", "error")
+            return _analysis_form_page(focus, {k: v for k, v in request.form.items() if k != "csrf_token"})
         if d.get("suitability"):
             ok, txt = ai.suitability_explanation(d["inputs"], d["suitability"])
             d["suitability"]["explanation"] = txt if (ok and txt) else " ".join(d["suitability"]["factors"])
             d["suitability"]["explanation_source"] = "gemini" if (ok and txt) else "rule-based"
+        d.setdefault("meta", {})["duration_sec"] = round(time.perf_counter() - t0, 1)     # measured, not assumed
         r = Analysis(user_id=current_user.id, company_name=d["inputs"]["company_name"],
                      provider=d["inputs"]["provider"], industry=d["inputs"]["industry"],
                      region=d["inputs"]["region"], monthly_budget=d["inputs"]["monthly_budget"],
@@ -205,42 +263,54 @@ def analysis():
                      availability_req=d["inputs"]["availability"], compliance_req=d["inputs"]["compliance"],
                      result_json=json.dumps(d))
         db.session.add(r); db.session.commit()
-        return redirect(url_for("report", rid=r.id))
-    return render_template("analysis.html")
+        flash(f"{FOCUS_PAGES[focus]['done'] if focus in FOCUS_PAGES else 'Cloud analysis completed successfully'}! "
+              f"Time taken: {d['meta']['duration_sec']} seconds.", "success")
+        anchor = FOCUS_PAGES[focus]["anchor"] if focus in FOCUS_PAGES else None
+        return redirect(url_for("report", rid=r.id, _anchor=anchor))
+    return _analysis_form_page()
 
 
-# ---------------- Dashboard (history + trends) ----------------
+# ---------------- Dashboard (overview only) ----------------
 
 @app.get("/dashboard")
 @login_required
 def dashboard():
-    all_reports = current_user.analyses.order_by(Analysis.created_at.desc()).all()
-    recent = all_reports[:5]
+    """Summary overview. Detailed storage / cost / compute / security results are NOT shown here;
+    they live in each saved report (open it from Analysis History)."""
+    mine = current_user.analyses
+    recent = (mine.options(defer(Analysis.result_json), defer(Analysis.ai_insights))
+              .order_by(Analysis.created_at.desc(), Analysis.id.desc()).limit(5).all())
+    total = mine.count()
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    top = (db.session.query(Analysis.provider, func.count(Analysis.id))
+           .filter(Analysis.user_id == current_user.id).group_by(Analysis.provider)
+           .order_by(func.count(Analysis.id).desc(), Analysis.provider).first())
+    stats = dict(
+        total=total,
+        reports=mine.filter(Analysis.result_json.isnot(None), Analysis.result_json != "").count(),
+        this_month=mine.filter(Analysis.created_at >= month_start).count(),
+        ai_insights=mine.filter(Analysis.ai_insights.isnot(None)).count(),
+        ai_questions=ChatMessage.query.filter_by(user_id=current_user.id, role="user").count(),
+        top_provider=top[0] if top else None,
+        last=recent[0].created_at if recent else None)
+    return render_template("dashboard.html", stats=stats, recent=recent)
 
-    selected = None
-    try:
-        rid = int(request.args.get("report") or 0)
-        selected = next((x for x in all_reports if x.id == rid), None)
-    except (TypeError, ValueError):
-        pass
-    if selected is None:
-        selected = all_reports[0] if all_reports else None
 
-    chart = _chart_data(selected.data()) if selected else None
-    trend = dict(
-        labels=[x.created_at.strftime("%b %d") for x in reversed(all_reports)],
-        cost=[x.data().get("cost", {}).get("primary", {}).get("monthly", 0) for x in reversed(all_reports)],
-        score=[x.data().get("security", {}).get("score", 0) for x in reversed(all_reports)])
-    return render_template("dashboard.html", r=selected, d=selected.data() if selected else None,
-                           chart=chart, recent=recent, reports_count=len(all_reports),
-                           all_reports=all_reports, trend=trend)
+# ---------------- Analysis history ----------------
+
+@app.get("/history")
+@login_required
+def history():
+    rows = (current_user.analyses.options(defer(Analysis.ai_insights))
+            .order_by(Analysis.created_at.desc(), Analysis.id.desc()).all())
+    return render_template("history.html", rows=rows)
 
 
 @app.get("/reports")
 @login_required
 def reports():
-    return render_template("reports.html",
-                           rows=current_user.analyses.order_by(Analysis.created_at.desc()).all())
+    """Kept so old bookmarks keep working; the list now lives at /history."""
+    return redirect(url_for("history"))
 
 
 @app.get("/profile")
@@ -271,46 +341,65 @@ def report_pdf(rid):
                      download_name=f"cloudinsight-report-{r.id}.pdf")
 
 
-# ---------------- Focused analysis pages ----------------
-
-def _focused(template_name):
-    r = _latest_report()
-    if not r:
-        flash("Run a cloud analysis first to unlock this section.", "error")
-        return redirect(url_for("analysis"))
-    return render_template(template_name + ".html", r=r, d=r.data(), chart=_chart_data(r.data()))
-
+# ---------------- Security / Cost / Storage analysis interfaces ----------------
 
 @app.get("/security")
 @login_required
 def security_page():
-    return _focused("security")
+    return _analysis_form_page("security")
 
 
 @app.get("/cost")
 @login_required
 def cost_page():
-    return _focused("cost")
+    return _analysis_form_page("cost")
 
 
 @app.get("/storage")
 @login_required
 def storage_page():
-    return _focused("storage")
+    return _analysis_form_page("storage")
 
 
 # ---------------- AI assistant ----------------
 
+CHAT_CONTEXT_TURNS = 8          # last N messages sent to the model as conversation context
+MAX_QUESTION_CHARS = 2000
+
+
+def _chat_scope(raw):
+    """Resolve the report a conversation is about. None = general cloud questions.
+    A report id must belong to the logged-in user (404 otherwise)."""
+    if raw is None:
+        return _latest_report()
+    raw = str(raw).strip().lower()
+    if raw in ("", "0", "general", "none", "null"):
+        return None
+    try:
+        return _owned_report(int(raw))
+    except ValueError:
+        abort(404)
+
+
+def _chat_query(report):
+    return ChatMessage.query.filter_by(user_id=current_user.id, analysis_id=report.id if report else None)
+
+
 @app.get("/assistant")
 @login_required
 def assistant():
-    r = _latest_report()
-    msgs = (ChatMessage.query.filter_by(user_id=current_user.id)
-            .order_by(ChatMessage.created_at).limit(60).all()) if r else []
-    return render_template("assistant.html", r=r, msgs=msgs, gemini_ok=ai.gemini_ready(),
-                           suggestions=["Why was this provider recommended?", "Why is the estimated cost high?",
-                                        "How can I reduce storage cost?", "What are the main security risks?",
-                                        "How should I secure my cloud storage?", "What should I improve first?"])
+    r = _chat_scope(request.args.get("report"))
+    msgs = list(reversed(_chat_query(r).order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc()).limit(60).all()))
+    options = current_user.analyses.options(defer(Analysis.result_json), defer(Analysis.ai_insights)) \
+        .order_by(Analysis.created_at.desc(), Analysis.id.desc()).all()
+    if r:
+        suggestions = ["Why was this provider recommended?", "Why is the estimated cost what it is?",
+                       "What are the main security risks?", "What should I improve first?"]
+    else:
+        suggestions = ["What is the difference between object and block storage?", "How does cloud egress pricing work?",
+                       "Explain IAM in simple terms", "AWS vs Azure vs Google Cloud \u2014 how do I choose?"]
+    return render_template("assistant.html", r=r, msgs=msgs, options=options, gemini_ok=ai.gemini_ready(),
+                           suggestions=suggestions)
 
 
 @app.post("/api/ai/ask")
@@ -320,19 +409,26 @@ def api_ai_ask():
     q = (payload.get("question") or "").strip()
     if not q:
         return jsonify(answer="Please type a question."), 400
-    r = _latest_report()
-    if not r:
-        return jsonify(answer="Run a cloud analysis first so I can ground my answers in your report.")
-    db.session.add(ChatMessage(user_id=current_user.id, analysis_id=r.id, role="user", content=q))
-    recent = (ChatMessage.query.filter_by(user_id=current_user.id)
-              .order_by(ChatMessage.created_at.desc()).limit(6).all())
-    history = " | ".join(f"{m.role}: {m.content}" for m in reversed(recent))[:1200]
-    ok, ans = ai.ask(q, r.data())
+    q = q[:MAX_QUESTION_CHARS]
+    rid = payload.get("report_id")
+    r = _chat_scope(rid if rid is not None else "general")   # no id sent = general questions, never a guess
+    prior = list(reversed(_chat_query(r).order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+                          .limit(CHAT_CONTEXT_TURNS).all()))
+    history_turns = [dict(role=m.role, content=m.content) for m in prior]
+    ok, ans = ai.ask(q, r.data() if r else None, history_turns)
+    gemini_error = None
     if not ok:
-        ans = ai.offline_answer(q, r.data()) or ai.OFFLINE_MSG
-    db.session.add(ChatMessage(user_id=current_user.id, analysis_id=r.id, role="assistant", content=ans))
+        gemini_error = ai.last_error()
+        ans = ai.offline_answer(q, r.data()) if r else None
+        if not ans:
+            # Nothing trustworthy to say: report the failure, and do not store it as an "answer".
+            msg = ai.OFFLINE_MSG + (" Select a saved report to get data-derived answers while the AI is offline." if not r else "")
+            return jsonify(answer=msg, gemini=False, error=gemini_error)
+    aid = r.id if r else None
+    db.session.add(ChatMessage(user_id=current_user.id, analysis_id=aid, role="user", content=q))
+    db.session.add(ChatMessage(user_id=current_user.id, analysis_id=aid, role="assistant", content=ans))
     db.session.commit()
-    return jsonify(answer=ans, gemini=ok)
+    return jsonify(answer=ans, gemini=ok, error=gemini_error)
 
 
 @app.get("/api/ai/insights/<int:rid>")
@@ -346,10 +442,27 @@ def api_ai_insights(rid):
         r.ai_insights = json.dumps(data)
         db.session.commit()
         return jsonify(available=True, insights=data)
-    return jsonify(available=False, message=ai.OFFLINE_MSG, fallback=ai.offline_insights(r.data()))
+    reason = ai.last_error()
+    try:
+        fallback = ai.offline_insights(r.data())
+    except Exception:
+        fallback = None
+    return jsonify(available=False, message=ai.OFFLINE_MSG, fallback=fallback, error=reason)
+
+
+@app.get("/healthz")
+def healthz():
+    """Hosting health check: confirms the app is up and the database answers."""
+    try:
+        db.session.execute(text("SELECT 1"))
+        return jsonify(status="ok")
+    except Exception:
+        return jsonify(status="error"), 503
+
+
+with app.app_context():
+    db.create_all()          # creates missing tables only; never alters or deletes existing data
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "").strip() == "1")     # debug is OFF unless FLASK_DEBUG=1

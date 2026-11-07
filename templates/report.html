@@ -1,11 +1,12 @@
 {% extends 'dash_base.html' %}
 {% block pagetitle %}Analysis Report — {{ r.company_name }}{% endblock %}
-{% block pagesub %}{{ r.provider }} (auto-recommended) · {{ d.inputs.region }} · generated {{ d.meta.generated_at }}{% endblock %}
+{% block pagesub %}{{ r.provider }} (auto-recommended) · {{ d.inputs.region }} · generated {{ d.meta.generated_at }}{% if d.meta.duration_sec is defined %} · analysis took {{ d.meta.duration_sec }} s{% endif %}{% endblock %}
 {% block content %}
 
 <div class="rpt-actions">
   <a class="btn btn-outline" href="{{ url_for('report_pdf', rid=r.id) }}"><i data-lucide="download"></i> Download PDF Report</a>
-  <a class="btn btn-primary" href="{{ url_for('assistant') }}"><i data-lucide="bot"></i> Ask the AI about this report</a>
+  <a class="btn btn-primary" href="{{ url_for('assistant', report=r.id) }}"><i data-lucide="bot"></i> Ask the AI about this report</a>
+  <a class="btn btn-outline" href="{{ url_for('history') }}"><i data-lucide="history"></i> Analysis History</a>
 </div>
 
 <section class="rpt-section reveal" id="sec-1">
@@ -56,14 +57,7 @@
 </section>
 
 <section class="rpt-section reveal" id="sec-10">
-  <h2 class="rpt-heading"><span>10</span>AI Insights</h2>
-  <div class="ai-panel card-panel" id="ai-insights" data-report="{{ r.id }}">
-    <div class="ai-skeleton"><div class="sk sk-title"></div><div class="sk"></div><div class="sk short"></div></div>
-  </div>
-</section>
-
-<section class="rpt-section reveal" id="sec-11">
-  <h2 class="rpt-heading"><span>11</span>Recommendations</h2>
+  <h2 class="rpt-heading"><span>10</span>Recommendations</h2>
   <div class="card-panel"><ol class="rec-list">
     {% for x in d.recommendations %}<li>{{ x }}</li>{% endfor %}</ol></div>
 </section>

@@ -474,3 +474,68 @@ input.extracted,select.extracted{border-color:var(--cyan)!important;box-shadow:0
 .history-left select{flex:1;padding:9px 13px;border:1.5px solid var(--line);border-radius:11px;font-family:var(--fb);
   font-size:.9rem;background:#fff;cursor:pointer}
 .history-left select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+/* ===== Dashboard overview, history, assistant avatar (added) ===== */
+.welcome-card{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  background:linear-gradient(135deg,#EFF4FF,#fff 70%);border-color:#DCE7FF}
+.welcome-card h2{font-size:1.35rem}.welcome-card p{color:var(--muted);margin-top:4px;max-width:620px}
+.wave{display:inline-block;transform-origin:70% 70%;animation:wave 2.4s ease-in-out 1}
+@keyframes wave{0%,60%,100%{transform:rotate(0)}10%,30%{transform:rotate(14deg)}20%,40%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
+.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.quick-card{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow);transition:transform .2s,box-shadow .25s,border-color .25s}
+.quick-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift);border-color:#BFD2FF}
+.quick-card > svg:first-child{width:38px;height:38px;padding:9px;border-radius:11px;background:#EFF4FF;color:var(--blue);flex-shrink:0}
+.quick-card div{flex:1;min-width:0}.quick-card b{display:block;font-family:var(--fh);font-size:.98rem}
+.quick-card span{font-size:.82rem;color:var(--muted)}.quick-card .qa{width:18px;height:18px;color:var(--blue)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.panel-head .sub-heading{margin:0}
+.activity-list{list-style:none;display:flex;flex-direction:column}
+.activity-list li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.activity-list li:last-child{border-bottom:0}
+.act-dot{width:9px;height:9px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.act-main{flex:1;min-width:0;display:flex;flex-direction:column}.act-main span{font-size:.8rem;color:var(--muted)}
+.table-filter{padding:8px 13px;border:1.5px solid var(--line);border-radius:11px;font-family:var(--fb);font-size:.88rem;min-width:240px}
+.table-filter:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.history-table .h-detail td{background:var(--bg-soft)}
+.history-table .h-row[hidden],.history-table .h-detail[hidden]{display:none}
+.profile-picker{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.profile-picker label{display:flex;align-items:center;gap:7px;font-size:.85rem;font-weight:800;color:var(--navy)}
+.profile-picker label svg{width:16px;height:16px;color:var(--blue)}.profile-picker label small{font-weight:600;color:var(--muted)}
+.profile-picker select{padding:10px 13px;border:1.5px solid var(--line);border-radius:11px;font-family:var(--fb);font-size:.92rem;background:#fff}
+.comp-status{display:flex;flex-direction:column;gap:1px;margin-top:5px;font-size:.7rem;color:var(--muted)}
+.comp-status b{font-weight:800}.comp-status .st-live{color:#0B8A6B}.comp-status .st-cached{color:var(--blue)}.comp-status .st-estimated{color:var(--amber)}
+
+/* AI assistant header + animated avatar */
+.assistant-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:12px}
+.assistant-intro{flex:1;min-width:180px}.assistant-intro b{font-family:var(--fh);display:block}
+.assistant-intro span{font-size:.8rem;color:var(--muted)}
+.chat-scope{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:800;color:var(--navy)}
+.chat-scope svg{width:14px;height:14px;color:var(--blue)}
+.chat-scope select{padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:var(--fb);font-size:.85rem;max-width:280px;background:#fff}
+.ai-avatar{width:68px;height:68px;flex-shrink:0}
+.ai-avatar svg{width:100%;height:100%;overflow:visible}
+.ai-avatar .av-bot{animation:avFloat 4s ease-in-out infinite;transform-origin:60px 60px}
+.ai-avatar .av-glow{animation:avGlow 4s ease-in-out infinite;transform-origin:60px 62px}
+.ai-avatar .av-eyes{animation:avBlink 5s infinite;transform-origin:60px 57px}
+.ai-avatar .av-ant{animation:avPulse 2.4s ease-in-out infinite;transform-origin:60px 11px}
+.ai-avatar .av-dot{opacity:.25}
+.ai-avatar.is-thinking .av-bot{animation:avFloat 1.6s ease-in-out infinite}
+.ai-avatar.is-thinking .av-ant{animation:avPulse .7s ease-in-out infinite}
+.ai-avatar.is-thinking .av-dot{animation:avDots 1s infinite}
+.ai-avatar.is-thinking .d2{animation-delay:.18s}.ai-avatar.is-thinking .d3{animation-delay:.36s}
+@keyframes avFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes avGlow{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes avBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes avPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.35)}}
+@keyframes avDots{0%,100%{opacity:.25}50%{opacity:1}}
+.sug-label{font-size:.78rem;font-weight:800;color:var(--muted);align-self:center}
+.ai-error-note{font-size:.72rem;color:var(--muted);margin:4px 0 0 4px}
+.msg.ai{flex-direction:column;align-items:flex-start}
+@media (prefers-reduced-motion:reduce){.ai-avatar *,.wave{animation:none!important}}
+@media (max-width:640px){.chat-scope{width:100%}.chat-scope select{flex:1;max-width:none}.table-filter{min-width:0;width:100%}.ai-avatar{width:56px;height:56px}}
+
+/* logout is a POST form now; make its button look like the other sidebar links; real-time loader */
+.logout-form{margin:0}
+button.side-link{width:100%;background:none;border:0;font-family:inherit;color:inherit;text-align:left;cursor:pointer}
+.load-timer{font-family:var(--fh);font-size:1.6rem;font-weight:800;color:var(--blue);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+button.side-logout{color:#F2A5B4}

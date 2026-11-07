@@ -51,6 +51,19 @@ class Analysis(db.Model):
     def data(self):
         return json.loads(self.result_json or "{}")
 
+    # Derived display fields (no new columns, so existing databases need no migration).
+    @property
+    def has_report(self):
+        return bool(self.result_json)
+
+    @property
+    def status(self):
+        return "Completed" if self.has_report else "Incomplete"
+
+    @property
+    def title(self):
+        return f"Cloud Analysis — {self.company_name}"
+
 
 class ChatMessage(db.Model):
     __tablename__ = "chat_messages"

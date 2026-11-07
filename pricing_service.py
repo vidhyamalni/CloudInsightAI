@@ -246,4 +246,6 @@ def summarize(prices, region):
     baseline = load_baseline()
     return dict(currency=baseline.get("currency", "USD"), generated_at=_now().strftime("%Y-%m-%d %H:%M UTC"),
                 region_requested=region, live_enabled=live_enabled(), overall_status=overall, counts=counts,
-                last_manual_review=baseline.get("last_manual_review"), providers=prices)
+                last_manual_review=baseline.get("last_manual_review"), providers=prices,
+                # which price points have an official-API integration at all (everything else is a stored estimate)
+                live_supported={name: list(getattr(mod, "SUPPORTED", ())) for name, mod in LIVE_FETCHERS.items()})

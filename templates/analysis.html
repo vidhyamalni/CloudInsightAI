@@ -1,13 +1,28 @@
 {% extends 'dash_base.html' %}
-{% block pagetitle %}Cloud Analysis{% endblock %}
-{% block pagesub %}Describe your company — the system analyzes all six providers automatically{% endblock %}
+{% block pagetitle %}{{ page_title or 'Cloud Analysis' }}{% endblock %}
+{% block pagesub %}{{ page_sub or 'Describe your company — the system analyzes all six providers automatically' }}{% endblock %}
 {% block content %}
 
+{% if focus %}
+<div class="notice"><i data-lucide="info"></i><div><strong>This opens a new analysis, not an old result.</strong>
+  Submit your requirements to run a fresh analysis; it is saved as a new report in
+  <a href="{{ url_for('history') }}"><u>Analysis History</u></a> and you are taken straight to the
+  {{ page_title.replace(' Analysis', '').lower() }} section of that report. Earlier reports are never overwritten.</div></div>
+{% endif %}
 <div class="notice"><i data-lucide="sparkles"></i><div><strong>No provider selection needed.</strong>
   All six providers (AWS, Microsoft Azure, Google Cloud, IBM Cloud, Oracle Cloud, Tencent Cloud) are analyzed
   automatically and the most suitable one is recommended with a full explanation.</div></div>
 
 <form class="analysis-form card-panel" id="analysis-form" method="post" action="{{ url_for('analysis') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if focus %}<input type="hidden" name="focus" value="{{ focus }}">{% endif %}
+  {% if profiles %}
+  <div class="profile-picker">
+    <label for="profileSelect"><i data-lucide="building-2"></i> Start from a company you analysed before <small>(optional &mdash; only pre-fills the form)</small></label>
+    <select id="profileSelect"><option value="">— New company / enter details below —</option>
+      {% for p in profiles %}<option value="{{ loop.index0 }}">{{ p.company_name }}</option>{% endfor %}</select>
+  </div>
+  {% endif %}
   <div class="upload-zone" id="uploadZone">
     <input type="file" id="companyFile" name="company_file" accept=".txt,.md,.json,.csv,.pdf" hidden>
     <i data-lucide="file-up"></i>
@@ -50,15 +65,20 @@
   </div>
   <div class="form-foot">
     <p class="form-note"><i data-lucide="info"></i> All results are clearly labeled as estimates and verified against your assumptions.</p>
-    <button class="btn btn-primary btn-lg" type="submit">Analyze Cloud Environment <i data-lucide="scan-search"></i></button>
+    <button class="btn btn-primary btn-lg" type="submit">{{ button or 'Analyze Cloud Environment' }} <i data-lucide="scan-search"></i></button>
   </div>
 </form>
 
 <div class="load-overlay" id="analysis-overlay" aria-hidden="true">
   <div class="load-box">
     <div class="spinner"></div>
-    <p class="load-title">Analyzing your cloud environment</p>
-    <p class="load-status">Evaluating storage requirements…</p>
+    <p class="load-title" id="loadTitle">{{ busy or 'Analyzing Cloud Environment...' }}</p>
+    <p class="load-timer" id="loadTimer" aria-live="off">00:00</p>
+    <p class="load-status">Working on your request. The time shown is real elapsed time.</p>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.COMPANY_PROFILES = {{ (profiles or []) | tojson }}; window.FORM_VALUES = {{ (form_values or {}) | tojson }};</script>
 {% endblock %}

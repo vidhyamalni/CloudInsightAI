@@ -7,6 +7,7 @@ import requirement_extractor as rx
 
 OFFLINE_MSG = "AI analysis is temporarily unavailable. Your cloud analysis is still available."
 
+CALL_TIMEOUT_MS = 25000
 MODEL_CANDIDATES = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
 
 _COMPUTE = {"Light", "Moderate", "Heavy", "Intensive"}
@@ -33,21 +34,51 @@ def gemini_ready():
     return bool(_api_key())
 
 
+_last_error = None
+
+
+def last_error():
+    """Short, key-redacted reason for the most recent Gemini failure (None if the last call worked)."""
+    return _last_error
+
+
+def _set_error(msg):
+    global _last_error
+    _last_error = msg
+
+
+def _record(exc, key):
+    global _last_error
+    msg = f"{type(exc).__name__}: {exc}"
+    if key:
+        msg = msg.replace(key, "***")
+    _last_error = " ".join(msg.split())[:220]
+
+
 def _call_gemini(prompt):
     """Tries candidate models, then auto-discovers whatever is available.
-    Returns response text or None. Never raises."""
+    Returns response text or None. Never raises; the reason for a failure is kept in last_error()."""
+    global _last_error
+    _last_error = None
     key = _api_key()
     if not key:
+        _last_error = "No Gemini API key configured (set GEMINI_API_KEY)."
         return None
     try:
         from google import genai as ggenai
-        client = ggenai.Client(api_key=key)
+        try:                                    # bounded wait per call (ms); older SDKs without http_options fall back
+            from google.genai import types as gtypes
+            client = ggenai.Client(api_key=key, http_options=gtypes.HttpOptions(timeout=CALL_TIMEOUT_MS))
+        except Exception:
+            client = ggenai.Client(api_key=key)
         for model in MODEL_CANDIDATES:
             try:
                 resp = client.models.generate_content(model=model, contents=prompt)
                 if resp and getattr(resp, "text", None):
+                    _last_error = None
                     return resp.text
-            except Exception:
+            except Exception as exc:
+                _record(exc, key)
                 continue
         # Auto-discovery: ask the API what models exist for this key
         try:
@@ -57,13 +88,17 @@ def _call_gemini(prompt):
                     try:
                         resp = client.models.generate_content(model=name, contents=prompt)
                         if resp and getattr(resp, "text", None):
+                            _last_error = None
                             return resp.text
-                    except Exception:
+                    except Exception as exc:
+                        _record(exc, key)
                         continue
-        except Exception:
-            pass
-    except Exception:
-        pass
+        except Exception as exc:
+            _record(exc, key)
+    except Exception as exc:
+        _record(exc, key)
+    if _last_error is None:
+        _last_error = "Gemini returned an empty response."
     return None
 
 
@@ -87,7 +122,12 @@ def _compact(report):
         high_risks=sec["high"], medium_risks=sec["medium"], low_risks=sec["low"],
         domains=[d["domain"] + " (" + d["status"] + ")" for d in sec["domains"]],
         budget_utilization=report["cost"]["budget_utilization"],
-        provider_monthly=report["cost"]["by_provider"]))
+        provider_monthly=report["cost"]["by_provider"],
+        recommended_provider=(report.get("suitability") or {}).get("winner"),
+        provider_ranking=[dict(provider=r["provider"], score=r["overall"])
+                          for r in (report.get("suitability") or {}).get("ranking", [])],
+        pricing_status=(report.get("pricing") or {}).get("overall_status", "estimated"),
+        security_analysis_type="simulated configuration analysis, not a live scan"))
 
 
 INSIGHTS_PROMPT = """You are the AI analyst inside CloudInsight AI, a cloud security, risk and cost analytics platform.
@@ -118,24 +158,66 @@ def generate_insights(report):
         for k in ("optimization", "architecture", "recommendations"):
             v = data.get(k, [])
             data[k] = [str(x) for x in v][:6] if isinstance(v, list) else [str(v)]
+        if not data["summary"] or not (data["cost_insights"] or data["security_insights"] or data["storage_insights"]):
+            _set_error("Gemini returned an incomplete insights answer.")
+            return False, None
         return True, data
-    except Exception:
+    except Exception as exc:
+        _record(exc, _api_key())
         return False, None
 
 
-ASK_PROMPT = """You are the AI assistant of CloudInsight AI. Answer the user's question using ONLY the
-analysis context below. All pricing figures are estimates. Be concise (max 180 words), professional and specific.
+ASK_PROMPT = """You are CloudInsight Assistant, a friendly cloud-computing expert inside CloudInsight AI.
 
-Analysis context: {data}
-Recent conversation: {history}
+You can discuss cloud computing, AWS, Microsoft Azure, Google Cloud, IBM Cloud, Oracle Cloud, Tencent Cloud, cloud security,
+pricing models, storage, networking, databases, and infrastructure design. Answer the user's actual question in natural
+language, in your own words (no canned answers). Use the conversation so far to resolve follow-ups such as "why?", "and
+for Azure?" or "make it cheaper".
 
-User question: {q}"""
+Rules:
+- Explain technical ideas in simple language; use a short example or analogy when it helps.
+- General cloud knowledge (how a service works, concepts, trade-offs) may come from your own knowledge.
+- Never invent prices, SLA numbers, security findings, scan results or company details. Only quote figures that appear in
+  the report context below. For any other price or limit, describe how the pricing model works and tell the user to check
+  the provider's official pricing page or calculator.
+- Prices in the report are estimates unless the context says live/cached; security results are simulated, not a live scan.
+- If no report is selected and the user asks about "my" analysis, say they can select a report above the chat.
+- If you do not know something, say so plainly. If the question is unrelated to cloud or IT infrastructure, say briefly
+  that you can only help with cloud topics.
+- Be concise (about 200 words max), with short paragraphs or bullets.
+
+{context}
+Conversation so far:
+{history}
+
+User: {q}
+Assistant:"""
 
 
-def ask(question, report, history=""):
+def _format_history(history):
+    if not history:
+        return "(this is the first message)"
+    if isinstance(history, str):
+        return history
+    lines = []
+    for m in history[-8:]:
+        who = "User" if m.get("role") == "user" else "Assistant"
+        lines.append(f"{who}: {str(m.get('content', ''))[:600]}")
+    return "\n".join(lines)
+
+
+def ask(question, report=None, history=None):
+    """Free-form, multi-turn answer. `report` is the selected saved analysis (or None for general
+    cloud questions); `history` is a list of {role, content} turns. Returns (ok, text)."""
     if not gemini_ready():
+        global _last_error
+        _last_error = "No Gemini API key configured (set GEMINI_API_KEY)."
         return False, None
-    text = _call_gemini(ASK_PROMPT.format(data=_compact(report), history=history or "(none)", q=question))
+    if report:
+        context = "Selected report context (JSON; the only source of company-specific facts):\n" + _compact(report)
+    else:
+        context = "No report is selected: answer as a general cloud expert; do not claim anything about the user's own analysis."
+    text = _call_gemini(ASK_PROMPT.format(context=context, history=_format_history(history), q=question))
     return (True, text.strip()) if text else (False, None)
 
 # ---------------- requirement extraction ----------------
@@ -240,7 +322,7 @@ def offline_insights(report):
                  "All figures are estimates — verify with provider pricing calculators."),
         cost_insights=(f"Compute: {report['compute']['primary']['instances']}× {report['compute']['primary']['instance']} at "
                        f"${c['compute']:,.2f}/mo. Storage: {s['required_gb']} GB on {s['primary']['service']} at ${s['primary']['per_gb']}/GB-mo "
-                       f"= ${c['storage']:,.2f}/mo. Network/other uplift: ${c['network']:,.2f}/mo (10% + per-user baseline)."),
+                       f"= ${c['storage']:,.2f}/mo. Network egress: ${c['network']:,.2f}/mo (users x assumed GB per user x egress rate)."),
         security_insights=(f"Score {sec['score']}/100 ({sec['risk_level']}). Top gaps: "
                            + "; ".join(d["domain"] for d in sec["domains"] if d["status"] == "gap")
                            + ". Verification recommended: " + "; ".join(d["domain"] for d in sec["domains"] if d["status"] == "review") + "."),

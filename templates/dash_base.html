@@ -15,12 +15,13 @@
         ('security_page', 'security_page', 'shield-check', 'Security Analysis'),
         ('cost_page', 'cost_page', 'circle-dollar-sign', 'Cost Analysis'),
         ('storage_page', 'storage_page', 'hard-drive', 'Storage Analysis'),
-        ('reports', 'reports', 'file-text', 'Reports'),
+        ('history', 'history', 'history', 'Analysis History'),
         ('profile', 'profile', 'user', 'Profile')] %}
         <a class="side-link {% if ep == ep_name %}is-active{% endif %}" href="{{ url_for(url) }}">
           <i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
       {% endfor %}
-      <a class="side-link side-logout" href="{{ url_for('logout') }}"><i data-lucide="log-out"></i><span>Logout</span></a>
+      <form method="post" action="{{ url_for('logout') }}" class="logout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="side-link side-logout"><i data-lucide="log-out"></i><span>Logout</span></button></form>
     </nav>
     <div class="side-user"><span class="avatar">{{ current_user.name[:1] | upper }}</span>
       <div><b>{{ current_user.name }}</b><small>{{ current_user.email }}</small></div></div>
@@ -32,7 +33,9 @@
         <p class="page-sub">{% block pagesub %}{% endblock %}</p></div>
       <span class="topbar-chip"><i data-lucide="cloud"></i> {{ tagline }}</span>
     </header>
-    <main class="app-content">{% block content %}{% endblock %}</main>
+    <main class="app-content">
+      {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}<div class="flash flash-{{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}
+      {% block content %}{% endblock %}</main>
   </div>
 </div>
 {% endblock %}

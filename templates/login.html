@@ -25,6 +25,7 @@
     </div>
 
     <form method="post" action="{{ url_for('login_route', next=request.args.get('next')) }}" class="auth-form is-active" data-form="login">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="login">
       <div class="field"><label for="l-email"><i data-lucide="mail"></i> Email</label>
         <input id="l-email" type="email" name="email" required autocomplete="email"></div>
@@ -36,6 +37,7 @@
     </form>
 
     <form method="post" action="{{ url_for('login_route', next=request.args.get('next')) }}" class="auth-form" data-form="register">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="register">
       <div class="field"><label for="r-name"><i data-lucide="user"></i> Full name</label>
         <input id="r-name" name="name" required autocomplete="name"></div>
