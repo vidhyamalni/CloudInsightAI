@@ -45,9 +45,14 @@ def load_secret_key(instance_dir):
 
 
 def normalize_db_url(url):
-    """Hosts such as Render/Heroku hand out postgres://, which SQLAlchemy 2 no longer accepts."""
+    """Hosts such as Render/Heroku/Neon hand out postgres:// or postgresql://.
+
+    SQLAlchemy 2 rejects postgres://, and newer SQLAlchemy may default plain postgresql:// to the
+    psycopg (v3) driver. We ship psycopg2-binary, so name that driver explicitly."""
     if url and url.startswith("postgres://"):
-        return "postgresql://" + url[len("postgres://"):]
+        url = "postgresql://" + url[len("postgres://"):]
+    if url and url.startswith("postgresql://"):
+        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
     return url
 
 

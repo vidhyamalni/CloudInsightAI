@@ -182,10 +182,10 @@ class TestRedirectsAndDbUrl(unittest.TestCase):
             self.assertFalse(security.is_safe_next(bad), bad)
 
     def test_normalize_db_url(self):
-        self.assertEqual(security.normalize_db_url("postgres://u:p@h/db"), "postgresql://u:p@h/db")
-        self.assertEqual(security.normalize_db_url("postgresql://u:p@h/db"), "postgresql://u:p@h/db")
+        self.assertEqual(security.normalize_db_url("postgres://u:p@h/db"), "postgresql+psycopg2://u:p@h/db")
+        self.assertEqual(security.normalize_db_url("postgresql://u:p@h/db"), "postgresql+psycopg2://u:p@h/db")
+        self.assertEqual(security.normalize_db_url("postgresql+psycopg2://u:p@h/db"), "postgresql+psycopg2://u:p@h/db")
         self.assertEqual(security.normalize_db_url("sqlite:///x.db"), "sqlite:///x.db")
-
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

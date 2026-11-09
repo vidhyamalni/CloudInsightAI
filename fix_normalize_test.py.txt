@@ -1,0 +1,15 @@
+import re, sys
+path = sys.argv[1] if len(sys.argv) > 1 else r"tests\test_security.py"
+s = open(path, encoding="utf-8").read()
+new = '''    def test_normalize_db_url(self):
+        self.assertEqual(security.normalize_db_url("postgres://u:p@h/db"), "postgresql+psycopg2://u:p@h/db")
+        self.assertEqual(security.normalize_db_url("postgresql://u:p@h/db"), "postgresql+psycopg2://u:p@h/db")
+        self.assertEqual(security.normalize_db_url("postgresql+psycopg2://u:p@h/db"), "postgresql+psycopg2://u:p@h/db")
+        self.assertEqual(security.normalize_db_url("sqlite:///x.db"), "sqlite:///x.db")
+'''
+pat = re.compile(r"[ \t]*def test_normalize_db_url\(self\):\n(?:[ \t]*self\.assertEqual\(security\.normalize_db_url[^\n]*\n)+")
+s2, n = pat.subn(new, s, count=1)
+if n != 1:
+    sys.exit("Function not found - nothing changed")
+open(path, "w", encoding="utf-8", newline="\n").write(s2)
+print("Fixed:", path)
